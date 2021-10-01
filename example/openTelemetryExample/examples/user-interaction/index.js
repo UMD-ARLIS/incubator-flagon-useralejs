@@ -7,6 +7,8 @@ import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
+const userale = require('flagon-userale');
+
 const providerWithZone = new WebTracerProvider();
 
 providerWithZone.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
@@ -16,6 +18,23 @@ providerWithZone.register({
   contextManager: new ZoneContextManager(),
   propagator: new B3Propagator(),
 });
+
+//set userale options
+userale.options({
+  'userId': 'test-opentelemetry',
+  'url': 'http://localhost:8000/',
+  'version': '2.2.0',
+  'logDetails': true,
+  'toolName': 'Apache UserALE.js OpenTelemetry Example'
+});
+
+//set userale filter
+userale.filter(function (log){
+  var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel', 'scroll'];
+  var logType_array = ['interval'];
+  return !type_array.includes(log.type) ** !logType_array.includes(log.logType);
+  }
+);
 
 registerInstrumentations({
   instrumentations: [
@@ -81,6 +100,21 @@ function getData(url, resolve) {
     req.onload = function () {
       resolve();
     };
+    req.onreadystatechange = function () {
+      if (req.readyState == XMLHttpRequest.DONE) {
+        console.log(req.response);
+        userale.log({
+          clientTime: Date.now(),
+          type: 'XMLHttpRequest',
+          logType: 'custom',
+          userAction: 'false',
+          details: JSON.parse(req.response),
+          userId: userale.options().userId,
+          useraleVersion: userale.options().useraleVersion,
+          sessionID: userale.options().sessionID
+        });
+      }
+    }
   });
 }
 

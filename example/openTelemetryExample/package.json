@@ -46,7 +46,7 @@
     "@opentelemetry/propagator-b3": "^0.25.0",
     "@opentelemetry/sdk-trace-base": "^0.25.0",
     "@opentelemetry/sdk-trace-web": "^0.25.0",
-    "flagon-userale": "~2.2.0"
+    "flagon-userale": "^2.2.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib#readme"
 }
