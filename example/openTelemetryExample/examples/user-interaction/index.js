@@ -118,4 +118,24 @@ function getData(url, resolve) {
   });
 }
 
+document.addEventListener('click', function(e) {
+  userale.log({
+    target: userale.getSelector(e.target),
+    path: userale.buildPath(e),
+    clientTime: Date.now(),
+    type: e.type,
+    logType: 'custom',
+    userAction: false,
+    details: {'foo': 'bar', 'bar': 'foo'},
+    customField1: 'I can make this log look like anything I want',
+    customField2: 'foo',
+    userId: userale.options().userId,
+    toolVersion: userale.options().version,
+    toolName: userale.options().toolName,
+    useraleVersion: userale.options().useraleVersion,
+    sessionID: userale.options().sessionID,
+    traceId: trace.getSpan(context.active())._spanContext.traceId
+  });
+});
+
 window.addEventListener('load', prepareClickEvents);
