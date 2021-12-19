@@ -6,6 +6,7 @@ import { CollectorTraceExporter } from '@opentelemetry/exporter-collector';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { trace, context } from '@opentelemetry/api';
 
 const userale = require('flagon-userale');
 
