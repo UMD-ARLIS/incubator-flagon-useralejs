@@ -16,14 +16,12 @@
 */
 
 /* eslint-disable */
-
 // these are default values, which can be overridden by the user on the options page
 var userAleHost = 'http://localhost:8000';
 var userAleScript = 'userale-2.3.0.min.js';
 var toolUser = 'nobody';
 var toolName = 'test_app';
 var toolVersion = '2.3.0';
-
 /* eslint-enable */
 
 /*
@@ -42,7 +40,6 @@ var toolVersion = '2.3.0';
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
 var prefix = 'USERALE_';
 var CONFIG_CHANGE = prefix + 'CONFIG_CHANGE';
 var ADD_LOG = prefix + 'ADD_LOG';
@@ -65,23 +62,25 @@ var version = "2.3.0";
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 var sessionId = null;
-
 /**
  * Extracts the initial configuration settings from the
  * currently executing script tag.
  * @return {Object} The extracted configuration object
  */
+
 function getInitialSettings() {
   var settings = {};
+
   if (sessionId === null) {
     sessionId = getSessionId('userAleSessionId', 'session_' + String(Date.now()));
   }
+
   var script = document.currentScript || function () {
     var scripts = document.getElementsByTagName('script');
     return scripts[scripts.length - 1];
   }();
+
   var get = script ? script.getAttribute.bind(script) : function () {
     return null;
   };
@@ -101,28 +100,30 @@ function getInitialSettings() {
   settings.custIndex = get('data-index') || null;
   return settings;
 }
-
 /**
  * defines sessionId, stores it in sessionStorage, checks to see if there is a sessionId in
  * storage when script is started. This prevents events like 'submit', which refresh page data
  * from refreshing the current user session
  *
  */
+
 function getSessionId(sessionKey, value) {
   if (window.sessionStorage.getItem(sessionKey) === null) {
     window.sessionStorage.setItem(sessionKey, JSON.stringify(value));
     return value;
   }
+
   return JSON.parse(window.sessionStorage.getItem(sessionKey));
 }
-
 /**
  * Creates a function to normalize the timestamp of the provided event.
  * @param  {Object} e An event containing a timeStamp property.
  * @return {timeStampScale~tsScaler}   The timestamp normalizing function.
  */
+
 function timeStampScale(e) {
   var tsScaler;
+
   if (e.timeStamp && e.timeStamp > 0) {
     var delta = Date.now() - e.timeStamp;
     /**
@@ -137,6 +138,7 @@ function timeStampScale(e) {
       };
     } else if (delta > e.timeStamp) {
       var navStart = performance.timing.navigationStart;
+
       tsScaler = function tsScaler(ts) {
         return ts + navStart;
       };
@@ -150,6 +152,7 @@ function timeStampScale(e) {
       return Date.now();
     };
   }
+
   return tsScaler;
 }
 
@@ -182,26 +185,30 @@ function configure(config, newConfig) {
   Object.keys(newConfig).forEach(function (option) {
     if (option === 'userFromParams') {
       var userId = getUserIdFromParams(newConfig[option]);
+
       if (userId) {
         config.userId = userId;
       }
     }
+
     config[option] = newConfig[option];
   });
+
   if (configAutostart === false || newConfigAutostart === false) {
     config['autostart'] = false;
   }
 }
-
 /**
  * Attempts to extract the userid from the query parameters of the URL.
  * @param  {string} param The name of the query parameter containing the userid.
  * @return {string|null}       The extracted/decoded userid, or null if none is found.
  */
+
 function getUserIdFromParams(param) {
   var userField = param;
   var regex = new RegExp('[?&]' + userField + '(=([^&#]*)|&|#|$)');
   var results = window.location.href.match(regex);
+
   if (results && results[2]) {
     return decodeURIComponent(results[2].replace(/\+/g, ' '));
   } else {
@@ -433,9 +440,8 @@ function createVersionParts(count) {
  */
 var browser$1 = detect();
 var logs$1;
-var config$1;
+var config$1; // Interval Logging Globals
 
-// Interval Logging Globals
 var intervalID;
 var intervalType;
 var intervalPath;
@@ -444,20 +450,20 @@ var intervalCounter;
 var intervalLog;
 var filterHandler = null;
 var mapHandler = null;
-
 /**
  * Assigns a handler to filter logs out of the queue.
  * @param  {Function} callback The handler to invoke when logging.
  */
+
 function setLogFilter(callback) {
   filterHandler = callback;
 }
-
 /**
  * Assigns the config and log container to be used by the logging functions.
  * @param  {Array} newLogs   Log container.
  * @param  {Object} newConfig Configuration to use while logging.
  */
+
 function initPackager(newLogs, newConfig) {
   logs$1 = newLogs;
   config$1 = newConfig;
@@ -470,21 +476,24 @@ function initPackager(newLogs, newConfig) {
   intervalCounter = 0;
   intervalLog = null;
 }
-
 /**
  * Transforms the provided HTML event into a log and appends it to the log queue.
  * @param  {Object} e         The event to be logged.
  * @param  {Function} detailFcn The function to extract additional log parameters from the event.
  * @return {boolean}           Whether the event was logged.
  */
+
 function packageLog(e, detailFcn) {
   if (!config$1.on) {
     return false;
   }
+
   var details = null;
+
   if (detailFcn) {
     details = detailFcn(e);
   }
+
   var timeFields = extractTimeFields(e.timeStamp && e.timeStamp > 0 ? config$1.time(e.timeStamp) : Date.now());
   var log = {
     'target': getSelector(e.target),
@@ -507,16 +516,18 @@ function packageLog(e, detailFcn) {
     'useraleVersion': config$1.useraleVersion,
     'sessionID': config$1.sessionID
   };
+
   if (typeof filterHandler === 'function' && !filterHandler(log)) {
     return false;
   }
+
   if (typeof mapHandler === 'function') {
     log = mapHandler(log, e);
   }
+
   logs$1.push(log);
   return true;
 }
-
 /**
  * Packages the provided customLog to include standard meta data and appends it to the log queue.
  * @param  {Object} customLog        The behavior to be logged.
@@ -524,14 +535,18 @@ function packageLog(e, detailFcn) {
  * @param  {boolean} userAction     Indicates user behavior (true) or system behavior (false)
  * @return {boolean}           Whether the event was logged.
  */
+
 function packageCustomLog(customLog, detailFcn, userAction) {
   if (!config$1.on) {
     return false;
   }
+
   var details = null;
+
   if (detailFcn) {
     details = detailFcn();
   }
+
   var metaData = {
     'pageUrl': window.location.href,
     'pageTitle': document.title,
@@ -549,41 +564,43 @@ function packageCustomLog(customLog, detailFcn, userAction) {
     'sessionID': config$1.sessionID
   };
   var log = Object.assign(metaData, customLog);
+
   if (typeof filterHandler === 'function' && !filterHandler(log)) {
     return false;
   }
+
   if (typeof mapHandler === 'function') {
     log = mapHandler(log);
   }
+
   logs$1.push(log);
   return true;
 }
-
 /**
  * Extract the millisecond and microsecond portions of a timestamp.
  * @param  {Number} timeStamp The timestamp to split into millisecond and microsecond fields.
  * @return {Object}           An object containing the millisecond
  *                            and microsecond portions of the timestamp.
  */
+
 function extractTimeFields(timeStamp) {
   return {
     milli: Math.floor(timeStamp),
     micro: Number((timeStamp % 1).toFixed(3))
   };
 }
-
 /**
  * Track intervals and gather details about it.
  * @param {Object} e
  * @return boolean
  */
+
 function packageIntervalLog(e) {
   var target = getSelector(e.target);
   var path = buildPath(e);
   var type = e.type;
-  var timestamp = Math.floor(e.timeStamp && e.timeStamp > 0 ? config$1.time(e.timeStamp) : Date.now());
+  var timestamp = Math.floor(e.timeStamp && e.timeStamp > 0 ? config$1.time(e.timeStamp) : Date.now()); // Init - this should only happen once on initialization
 
-  // Init - this should only happen once on initialization
   if (intervalID == null) {
     intervalID = target;
     intervalType = type;
@@ -591,10 +608,10 @@ function packageIntervalLog(e) {
     intervalTimer = timestamp;
     intervalCounter = 0;
   }
+
   if (intervalID !== target || intervalType !== type) {
     // When to create log? On transition end
     // @todo Possible for intervalLog to not be pushed in the event the interval never ends...
-
     intervalLog = {
       'target': intervalID,
       'path': intervalPath,
@@ -618,35 +635,38 @@ function packageIntervalLog(e) {
       'useraleVersion': config$1.useraleVersion,
       'sessionID': config$1.sessionID
     };
+
     if (typeof filterHandler === 'function' && !filterHandler(intervalLog)) {
       return false;
     }
+
     if (typeof mapHandler === 'function') {
       intervalLog = mapHandler(intervalLog, e);
     }
-    logs$1.push(intervalLog);
 
-    // Reset
+    logs$1.push(intervalLog); // Reset
+
     intervalID = target;
     intervalType = type;
     intervalPath = path;
     intervalTimer = timestamp;
     intervalCounter = 0;
-  }
+  } // Interval is still occuring, just update counter
 
-  // Interval is still occuring, just update counter
+
   if (intervalID == target && intervalType == type) {
     intervalCounter = intervalCounter + 1;
   }
+
   return true;
 }
-
 /**
  * Extracts coordinate information from the event
  * depending on a few browser quirks.
  * @param  {Object} e The event to extract coordinate information from.
  * @return {Object}   An object containing nullable x and y coordinates for the event.
  */
+
 function getLocation(e) {
   if (e.pageX != null) {
     return {
@@ -665,23 +685,23 @@ function getLocation(e) {
     };
   }
 }
-
 /**
  * Extracts innerWidth and innerHeight to provide estimates of screen resolution
  * @return {Object} An object containing the innerWidth and InnerHeight
  */
+
 function getSreenRes() {
   return {
     'width': window.innerWidth,
     'height': window.innerHeight
   };
 }
-
 /**
  * Builds a string CSS selector from the provided element
  * @param  {HTMLElement} ele The element from which the selector is built.
  * @return {string}     The CSS selector for the element, or Unknown if it can't be determined.
  */
+
 function getSelector(ele) {
   if (ele.localName) {
     return ele.localName + (ele.id ? '#' + ele.id : '') + (ele.className ? '.' + ele.className : '');
@@ -693,32 +713,44 @@ function getSelector(ele) {
     return "Unknown";
   }
 }
-
 /**
  * Builds an array of elements from the provided event target, to the root element.
  * @param  {Object} e Event from which the path should be built.
  * @return {HTMLElement[]}   Array of elements, starting at the event target, ending at the root element.
  */
-function buildPath(e) {
-  if (e instanceof window.Event) {
-    var path = e.composedPath();
-    return selectorizePath(path);
-  }
-}
 
+function buildPath(e) {
+  var path = [];
+
+  if (e.path) {
+    path = e.path;
+  } else {
+    var ele = e.target;
+
+    while (ele) {
+      path.push(ele);
+      ele = ele.parentElement;
+    }
+  }
+
+  return selectorizePath(path);
+}
 /**
  * Builds a CSS selector path from the provided list of elements.
  * @param  {HTMLElement[]} path Array of HTMLElements from which the path should be built.
  * @return {string[]}      Array of string CSS selectors.
  */
+
 function selectorizePath(path) {
   var i = 0;
   var pathEle;
   var pathSelectors = [];
+
   while (pathEle = path[i]) {
     pathSelectors.push(getSelector(pathEle));
     ++i;
   }
+
   return pathSelectors;
 }
 function detectBrowser() {
@@ -746,32 +778,32 @@ function detectBrowser() {
  */
 var events;
 var bufferBools;
-var bufferedEvents;
-//@todo: Investigate drag events and their behavior
+var bufferedEvents; //@todo: Investigate drag events and their behavior
+
 var intervalEvents = ['click', 'focus', 'blur', 'input', 'change', 'mouseover', 'submit'];
 var refreshEvents;
 var windowEvents = ['load', 'blur', 'focus'];
-
 /**
  * Maps an event to an object containing useful information.
  * @param  {Object} e Event to extract data from
  */
+
 function extractMouseEvent(e) {
   return {
     'clicks': e.detail,
     'ctrl': e.ctrlKey,
     'alt': e.altKey,
     'shift': e.shiftKey,
-    'meta': e.metaKey
-    //    'text' : e.target.innerHTML
+    'meta': e.metaKey //    'text' : e.target.innerHTML
+
   };
 }
-
 /**
  * Defines the way information is extracted from various events.
  * Also defines which events we will listen to.
  * @param  {Object} config Configuration object to read from.
  */
+
 function defineDetails(config) {
   // Events list
   // Keys are event types
@@ -834,12 +866,12 @@ function defineDetails(config) {
     'submit': null
   };
 }
-
 /**
  * Hooks the event handlers for each event type of interest.
  * @param  {Object} config Configuration object to use.
  * @return {boolean}        Whether the operation succeeded
  */
+
 function attachHandlers(config) {
   defineDetails(config);
   Object.keys(events).forEach(function (ev) {
@@ -897,22 +929,21 @@ function attachHandlers(config) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 var sendIntervalId = null;
-
 /**
  * Initializes the log queue processors.
  * @param  {Array} logs   Array of logs to append to.
  * @param  {Object} config Configuration object to use when logging.
  */
+
 function initSender(logs, config) {
   if (sendIntervalId !== null) {
     clearInterval(sendIntervalId);
   }
+
   sendIntervalId = sendOnInterval(logs, config);
   sendOnClose(logs, config);
 }
-
 /**
  * Checks the provided log array on an interval, flushing the logs
  * if the queue has reached the threshold specified by the provided config.
@@ -920,32 +951,34 @@ function initSender(logs, config) {
  * @param  {Object} config Configuration object to be read from.
  * @return {Number}        The newly created interval id.
  */
+
 function sendOnInterval(logs, config) {
   return setInterval(function () {
     if (!config.on) {
       return;
     }
+
     if (logs.length >= config.logCountThreshold) {
       sendLogs(logs.slice(0), config, 0); // Send a copy
+
       logs.splice(0); // Clear array reference (no reassignment)
     }
   }, config.transmitInterval);
 }
-
 /**
  * Attempts to flush the remaining logs when the window is closed.
  * @param  {Array} logs   Array of logs to be flushed.
  * @param  {Object} config Configuration object to be read from.
  */
+
 function sendOnClose(logs, config) {
   window.addEventListener('pagehide', function () {
-    if (config.on && logs.length > 0) {
+    if (logs.length > 0) {
       navigator.sendBeacon(config.url, JSON.stringify(logs));
       logs.splice(0); // clear log queue
     }
   });
 }
-
 /**
  * Sends the provided array of logs to the specified url,
  * retrying the request up to the specified number of retries.
@@ -953,18 +986,20 @@ function sendOnClose(logs, config) {
  * @param  {string} config     configuration parameters (e.g., to extract URL from & send the POST request to).
  * @param  {Number} retries Maximum number of attempts to send the logs.
  */
-
 // @todo expose config object to sendLogs replate url with config.url
-function sendLogs(logs, config, retries) {
-  var req = new XMLHttpRequest();
 
-  // @todo setRequestHeader for Auth
+function sendLogs(logs, config, retries) {
+  var req = new XMLHttpRequest(); // @todo setRequestHeader for Auth
+
   var data = JSON.stringify(logs);
   req.open('POST', config.url);
+
   if (config.authHeader) {
     req.setRequestHeader('Authorization', config.authHeader);
   }
+
   req.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+
   req.onreadystatechange = function () {
     if (req.readyState === 4 && req.status !== 200) {
       if (retries > 0) {
@@ -972,6 +1007,7 @@ function sendLogs(logs, config, retries) {
       }
     }
   };
+
   req.send(data);
 }
 
@@ -979,32 +1015,39 @@ var config = {};
 var logs = [];
 var startLoadTimestamp = Date.now();
 var endLoadTimestamp;
+
 window.onload = function () {
   endLoadTimestamp = Date.now();
 };
 
-
+window.userale.filter(function (log) {
+  var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
+  var logType_array = ['interval'];
+  return !type_array.includes(log.type) && !logType_array.includes(log.logType);
+});
 
 var started = false;
 
-// Start up Userale
 config.on = false;
 config.useraleVersion = version;
 configure(config, getInitialSettings());
 initPackager(logs, config);
+
 if (config.autostart) {
   setup(config);
 }
-
 /**
  * Hooks the global event listener, and starts up the
  * logging interval.
  * @param  {Object} config Configuration settings for the logger
  */
+
+
 function setup(config) {
   if (!started) {
     setTimeout(function () {
       var state = document.readyState;
+
       if (config.autostart && (state === 'interactive' || state === 'complete')) {
         attachHandlers(config);
         initSender(logs, config);
@@ -1019,18 +1062,19 @@ function setup(config) {
       }
     }, 100);
   }
-}
-
+} // Export the Userale API
 /**
  * Updates the current configuration
  * object with the provided values.
  * @param  {Object} newConfig The configuration options to use.
  * @return {Object}           Returns the updated configuration.
  */
+
 function options(newConfig) {
   if (newConfig !== undefined) {
     configure(config, newConfig);
   }
+
   return config;
 }
 
@@ -1050,15 +1094,12 @@ function options(newConfig) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-// browser is defined in firefox, but not in chrome. In chrome, they use
 // the 'chrome' global instead. Let's map it to browser so we don't have
 // to have if-conditions all over the place.
 
-var browser = browser || chrome;
-
-// creates a Future for retrieval of the named keys
+var browser = browser || chrome; // creates a Future for retrieval of the named keys
 // the value specified is the default value if one doesn't exist in the storage
+
 browser.storage.local.get({
   sessionId: null,
   userAleHost: userAleHost,
@@ -1067,6 +1108,7 @@ browser.storage.local.get({
   toolName: toolName,
   toolVersion: toolVersion
 }, storeCallback);
+
 function storeCallback(item) {
   injectScript({
     url: item.userAleHost,
@@ -1076,15 +1118,17 @@ function storeCallback(item) {
     toolVersion: item.toolVersion
   });
 }
+
 function queueLog(log) {
   browser.runtime.sendMessage({
     type: ADD_LOG,
     payload: log
   });
 }
+
 function injectScript(config) {
-  options(config);
-  //  start();  not necessary given that autostart in place, and option is masked from WebExt users
+  options(config); //  start();  not necessary given that autostart in place, and option is masked from WebExt users
+
   setLogFilter(function (log) {
     queueLog(Object.assign({}, log, {
       pageUrl: document.location.href
@@ -1092,6 +1136,7 @@ function injectScript(config) {
     return false;
   });
 }
+
 browser.runtime.onMessage.addListener(function (message) {
   if (message.type === CONFIG_CHANGE) {
     options({
@@ -1102,7 +1147,6 @@ browser.runtime.onMessage.addListener(function (message) {
     });
   }
 });
-
 /*
  eslint-enable
  */
