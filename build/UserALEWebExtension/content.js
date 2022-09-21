@@ -983,8 +983,6 @@ window.onload = function () {
   endLoadTimestamp = Date.now();
 };
 
-
-
 var started = false;
 
 // Start up Userale
