@@ -78,14 +78,19 @@ export function sendLogs(logs, config, retries) {
   const req = new XMLHttpRequest();
 
   // @todo setRequestHeader for Auth
-  const data = JSON.stringify(logs);
+  const data = JSON.stringify({records: logs.map(function(log) {
+    return {key:log['sessionID'], value:log}
+  })});
+
+  console.log(data)
 
   req.open('POST', config.url);
   if (config.authHeader) {
     req.setRequestHeader('Authorization', config.authHeader)
   }
 
-  req.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+  req.setRequestHeader('Content-type', 'application/vnd.kafka.json.v2+json');
+  req.setRequestHeader('Accept', 'application/vnd.kafka.v2+json');
 
   req.onreadystatechange = function() {
     if (req.readyState === 4 && req.status !== 200) {
