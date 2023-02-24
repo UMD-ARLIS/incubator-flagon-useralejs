@@ -126,11 +126,11 @@ export function attachHandlers(config) {
     }, true);
   });
 
-  intervalEvents.forEach(function(ev) {
-    document.addEventListener(ev, function(e) {
-        packageIntervalLog(e);
-    }, true);
-  });
+  // intervalEvents.forEach(function(ev) {
+  //   document.addEventListener(ev, function(e) {
+  //       packageIntervalLog(e);
+  //   }, true);
+  // });
 
   Object.keys(bufferedEvents).forEach(function(ev) {
     bufferBools[ev] = true;

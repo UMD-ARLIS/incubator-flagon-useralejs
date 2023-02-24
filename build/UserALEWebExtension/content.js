@@ -434,14 +434,6 @@ function createVersionParts(count) {
 var browser$1 = detect();
 var logs$1;
 var config$1;
-
-// Interval Logging Globals
-var intervalID;
-var intervalType;
-var intervalPath;
-var intervalTimer;
-var intervalCounter;
-var intervalLog;
 var filterHandler = null;
 var mapHandler = null;
 
@@ -463,12 +455,6 @@ function initPackager(newLogs, newConfig) {
   config$1 = newConfig;
   filterHandler = null;
   mapHandler = null;
-  intervalID = null;
-  intervalType = null;
-  intervalPath = null;
-  intervalTimer = null;
-  intervalCounter = 0;
-  intervalLog = null;
 }
 
 /**
@@ -570,75 +556,6 @@ function extractTimeFields(timeStamp) {
     milli: Math.floor(timeStamp),
     micro: Number((timeStamp % 1).toFixed(3))
   };
-}
-
-/**
- * Track intervals and gather details about it.
- * @param {Object} e
- * @return boolean
- */
-function packageIntervalLog(e) {
-  var target = getSelector(e.target);
-  var path = buildPath(e);
-  var type = e.type;
-  var timestamp = Math.floor(e.timeStamp && e.timeStamp > 0 ? config$1.time(e.timeStamp) : Date.now());
-
-  // Init - this should only happen once on initialization
-  if (intervalID == null) {
-    intervalID = target;
-    intervalType = type;
-    intervalPath = path;
-    intervalTimer = timestamp;
-    intervalCounter = 0;
-  }
-  if (intervalID !== target || intervalType !== type) {
-    // When to create log? On transition end
-    // @todo Possible for intervalLog to not be pushed in the event the interval never ends...
-
-    intervalLog = {
-      'target': intervalID,
-      'path': intervalPath,
-      'pageUrl': window.location.href,
-      'pageTitle': document.title,
-      'pageReferrer': document.referrer,
-      'browser': detectBrowser(),
-      'count': intervalCounter,
-      'duration': timestamp - intervalTimer,
-      // microseconds
-      'startTime': intervalTimer,
-      'endTime': timestamp,
-      'type': intervalType,
-      'logType': 'interval',
-      'targetChange': intervalID !== target,
-      'typeChange': intervalType !== type,
-      'userAction': false,
-      'userId': config$1.userId,
-      'toolVersion': config$1.version,
-      'toolName': config$1.toolName,
-      'useraleVersion': config$1.useraleVersion,
-      'sessionID': config$1.sessionID
-    };
-    if (typeof filterHandler === 'function' && !filterHandler(intervalLog)) {
-      return false;
-    }
-    if (typeof mapHandler === 'function') {
-      intervalLog = mapHandler(intervalLog, e);
-    }
-    logs$1.push(intervalLog);
-
-    // Reset
-    intervalID = target;
-    intervalType = type;
-    intervalPath = path;
-    intervalTimer = timestamp;
-    intervalCounter = 0;
-  }
-
-  // Interval is still occuring, just update counter
-  if (intervalID == target && intervalType == type) {
-    intervalCounter = intervalCounter + 1;
-  }
-  return true;
 }
 
 /**
@@ -747,8 +664,6 @@ function detectBrowser() {
 var events;
 var bufferBools;
 var bufferedEvents;
-//@todo: Investigate drag events and their behavior
-var intervalEvents = ['click', 'focus', 'blur', 'input', 'change', 'mouseover', 'submit'];
 var refreshEvents;
 var windowEvents = ['load', 'blur', 'focus'];
 
@@ -847,11 +762,13 @@ function attachHandlers(config) {
       packageLog(e, events[ev]);
     }, true);
   });
-  intervalEvents.forEach(function (ev) {
-    document.addEventListener(ev, function (e) {
-      packageIntervalLog(e);
-    }, true);
-  });
+
+  // intervalEvents.forEach(function(ev) {
+  //   document.addEventListener(ev, function(e) {
+  //       packageIntervalLog(e);
+  //   }, true);
+  // });
+
   Object.keys(bufferedEvents).forEach(function (ev) {
     bufferBools[ev] = true;
     window.addEventListener(ev, function (e) {
