@@ -70,8 +70,7 @@ function setup(config) {
                 packageCustomLog({
                     type: 'load',
                     logType: 'raw',
-                    pageLoadTime: endLoadTimestamp - startLoadTimestamp
-                    }, () => {},false)
+                    details: {pageLoadTime: endLoadTimestamp - startLoadTimestamp}                    }, () => {},false)
             } else {
                 setup(config);
             }

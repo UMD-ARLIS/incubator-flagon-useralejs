@@ -993,7 +993,9 @@
           packageCustomLog({
             type: 'load',
             logType: 'raw',
-            pageLoadTime: endLoadTimestamp - startLoadTimestamp
+            details: {
+              pageLoadTime: endLoadTimestamp - startLoadTimestamp
+            }
           }, function () {}, false);
         } else {
           setup(config);
