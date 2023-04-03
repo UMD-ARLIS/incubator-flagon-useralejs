@@ -452,12 +452,12 @@ var intervalLog;
 var filterHandler = null;
 var mapHandler = null;
 /**
- * Assigns a handler to transform logs from their default structure.
+ * Assigns a handler to filter logs out of the queue.
  * @param  {Function} callback The handler to invoke when logging.
  */
 
-function setLogMapper(callback) {
-  mapHandler = callback;
+function setLogFilter(callback) {
+  filterHandler = callback;
 }
 /**
  * Assigns the config and log container to be used by the logging functions.
@@ -1143,7 +1143,7 @@ function queueLog(log) {
 function injectScript(config) {
   options(config); //  start();  not necessary given that autostart in place, and option is masked from WebExt users
 
-  setLogMapper(function (log) {
+  setLogFilter(function (log) {
     queueLog(Object.assign({}, log, {
       pageUrl: document.location.href
     }));

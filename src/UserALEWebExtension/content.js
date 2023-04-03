@@ -55,7 +55,7 @@ function queueLog(log) {
 function injectScript(config) {
   options(config);
 //  start();  not necessary given that autostart in place, and option is masked from WebExt users
-  map(function (log) {
+  filter(function (log) {
     queueLog(Object.assign({}, log, {
       pageUrl: document.location.href,
     }));
