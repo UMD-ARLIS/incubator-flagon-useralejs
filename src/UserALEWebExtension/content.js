@@ -78,3 +78,61 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
+
+/**
+ * Builds an object containing attributes of an element.
+ * Attempts to parse all attribute values as JSON text.
+ * @param  {Object} e Event from which the target elemnet's attributes should be extracted from.
+ * @return {Object} Object with element attributes as key value pairs.
+ */
+function buildAttrs(e) {
+  let attributes = {};
+  let attributeBlackList = ["style"];
+  if(e && e.target && e.target instanceof Element) {
+      for(attr of e.target.attributes) {
+          if(attributeBlackList.includes(attr.name))
+              continue;
+          let val = attr.value;
+          try {
+              val = JSON.parse(val);
+          } catch (error) {}
+          attributes[attr.name] = val;
+      }
+  }
+  return attributes;
+}
+
+/**
+ * Builds an object containing all css properties of an element.
+ * @param  {Object} e Event from which the target elemnet's properties should be extracted from.
+ * @return {Object} Object with all CSS properties as key value pairs.
+ */
+function buildCSS(e) {
+  let properties = {};
+  if(e && e.target && e.target instanceof Element) {
+      let styleObj = e.target.style
+      for(prop of styleObj) {
+          properties[prop] = styleObj.getPropertyValue(prop);
+      }
+  }
+  return properties;
+}
+
+addCallbacks({
+  filter(log) {
+      var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
+      var logType_array = ['interval'];
+      if(type_array.includes(log.type) || logType_array.includes(log.logType)) {
+          return false;
+      }
+      return log;
+  },
+  attributes(log, e) {
+    return {
+        ...log,
+        attributes: buildAttrs(e),
+        style : buildCSS(e),
+        logType: 'custom',
+    };
+  }
+});
