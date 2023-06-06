@@ -94,9 +94,10 @@ const observer = new MutationObserver(
   (mutationList, observer) => {
     for (const mutation of mutationList) {
       if (mutation.addedNodes.length > 0) {
+        console.log(mutation);
         packageCustomLog({
-          mutation: mutation,
-          type: "mutation"
+          name: mutation.addedNodes[0].innerText,
+          type: "visit"
         },null, true);
       }
     }
