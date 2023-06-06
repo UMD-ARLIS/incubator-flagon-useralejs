@@ -19,7 +19,7 @@
 
 import * as globals from './globals';
 import * as MessageTypes from './messageTypes.js';
-import { addCallbacks, options, start } from '../main.js';
+import { addCallbacks, options, packageCustomLog, start } from '../main.js';
 
 // browser is defined in firefox, but not in chrome. In chrome, they use
 // the 'chrome' global instead. Let's map it to browser so we don't have
@@ -78,3 +78,31 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
+
+addCallbacks({
+  filter(log) {
+      var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
+      var logType_array = ['interval'];
+      if(type_array.includes(log.type) || logType_array.includes(log.logType)) {
+          return false;
+      }
+      return log;
+  }
+});
+
+const observer = new MutationObserver(
+  (mutationList, observer) => {
+    for (const mutation of mutationList) {
+      if (mutation.addedNodes.length > 0) {
+        packageCustomLog({
+          mutation: mutation,
+          type: "mutation"
+        },null, true);
+      }
+    }
+  }
+);
+
+var target = document.getElementById("sidebar_content");
+console.log(target)
+observer.observe(target, {childList: true, subtree: true});
