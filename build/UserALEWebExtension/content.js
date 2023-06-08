@@ -1129,19 +1129,29 @@ addCallbacks({
     return log;
   }
 });
+var nameRegex = /(Node|Way): ((.*) \((\d{9,10})\)|(\d{9,10}))/g;
 var observer = new MutationObserver(function (mutationList, observer) {
   var _iterator = _createForOfIteratorHelper(mutationList),
     _step;
   try {
     for (_iterator.s(); !(_step = _iterator.n()).done;) {
       var mutation = _step.value;
-      if (mutation.addedNodes.length > 0) {
-        console.log(mutation);
-        packageCustomLog({
-          name: mutation.addedNodes[0].innerText,
-          type: "visit"
-        }, null, true);
+      if (mutation.addedNodes.length == 0) {
+        continue;
       }
+      var name = mutation.addedNodes[0].innerText;
+      var parsedName = Array.from(name.matchAll(nameRegex));
+      if (parsedName.length == 0) {
+        continue;
+      }
+      packageCustomLog({
+        details: {
+          "class": parsedName[0][1],
+          name: parsedName[0][3],
+          id: parsedName[0][4] ? parsedName[0][4] : parsedName[0][5]
+        },
+        type: "visit"
+      }, null, true);
     }
   } catch (err) {
     _iterator.e(err);
@@ -1150,7 +1160,6 @@ var observer = new MutationObserver(function (mutationList, observer) {
   }
 });
 var target = document.getElementById("sidebar_content");
-console.log(target);
 observer.observe(target, {
   childList: true,
   subtree: true

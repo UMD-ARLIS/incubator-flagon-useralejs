@@ -90,20 +90,32 @@ addCallbacks({
   }
 });
 
-const observer = new MutationObserver(
-  (mutationList, observer) => {
-    for (const mutation of mutationList) {
-      if (mutation.addedNodes.length > 0) {
-        console.log(mutation);
-        packageCustomLog({
-          name: mutation.addedNodes[0].innerText,
-          type: "visit"
-        },null, true);
-      }
+const nameRegex = /(Node|Way): ((.*) \((\d{9,10})\)|(\d{9,10}))/g;
+
+const observer = new MutationObserver( (mutationList, observer) => {
+  for (const mutation of mutationList) {
+    if (mutation.addedNodes.length == 0) {
+      continue;
     }
+
+    const name = mutation.addedNodes[0].innerText;
+    const parsedName = Array.from(name.matchAll(nameRegex));
+
+    if (parsedName.length == 0) {
+      continue;
+    }
+
+    packageCustomLog({
+      details: {
+        class: parsedName[0][1],
+        name: parsedName[0][3],
+        id: parsedName[0][4] ? parsedName[0][4] : parsedName[0][5]
+      },
+      type: "visit"
+    },null, true);
+
   }
-);
+});
 
 var target = document.getElementById("sidebar_content");
-console.log(target)
 observer.observe(target, {childList: true, subtree: true});
