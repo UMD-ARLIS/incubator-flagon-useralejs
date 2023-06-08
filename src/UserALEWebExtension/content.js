@@ -105,11 +105,25 @@ const observer = new MutationObserver( (mutationList, observer) => {
       continue;
     }
 
+    const tagKeys = Array.from(
+      document.querySelectorAll("th.browse-tag-k"),
+      (node, i) => node.innerText,
+    );
+
+    const tagValues = Array.from(
+      document.querySelectorAll("td.browse-tag-v"),
+      (node, i) => node.innerText,
+    );
+
+    var tags = {};
+    tagKeys.forEach((key, i) => tags[key] = tagValues[i]);
+
     packageCustomLog({
       details: {
         class: parsedName[0][1],
+        id: parsedName[0][4] ? parsedName[0][4] : parsedName[0][5],
         name: parsedName[0][3],
-        id: parsedName[0][4] ? parsedName[0][4] : parsedName[0][5]
+        tags: tags,
       },
       type: "visit"
     },null, true);
