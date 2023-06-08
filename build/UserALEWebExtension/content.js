@@ -1119,6 +1119,7 @@ browser.runtime.onMessage.addListener(function (message) {
  eslint-enable
  */
 
+// Filter out unimportant logs
 addCallbacks({
   filter: function filter(log) {
     var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
@@ -1130,7 +1131,10 @@ addCallbacks({
   }
 });
 var nameRegex = /(Node|Way): ((.*) \((\d{9,10})\)|(\d{9,10}))/g;
-var observer = new MutationObserver(function (mutationList, observer) {
+var hashRegex = /#map=(\d+)\/(-?\d+.\d+)\/(-?\d+.\d+)/g;
+
+// Scrape changing sidebar content for visit events
+var visitObserver = new MutationObserver(function (mutationList, observer) {
   var _loop = function _loop() {
     if (mutation.addedNodes.length == 0) {
       return "continue";
@@ -1175,8 +1179,28 @@ var observer = new MutationObserver(function (mutationList, observer) {
     _iterator.f();
   }
 });
-var target = document.getElementById("sidebar_content");
-observer.observe(target, {
+var visitTarget = document.getElementById("sidebar_content");
+visitObserver.observe(visitTarget, {
   childList: true,
   subtree: true
+});
+
+// Watch for changes in the url for viewChange events
+var urlHash = window.location.hash;
+document.addEventListener('click', function (e) {
+  if (window.location.hash !== urlHash) {
+    urlHash = window.location.hash;
+    var parsedHash = Array.from(urlHash.matchAll(hashRegex));
+    if (parsedHash.length == 0) {
+      return;
+    }
+    packageCustomLog({
+      details: {
+        zoom: parsedHash[0][1],
+        latitude: parsedHash[0][2],
+        longitude: parsedHash[0][3]
+      },
+      type: "viewChange"
+    }, null, true);
+  }
 });

@@ -79,6 +79,7 @@ browser.runtime.onMessage.addListener(function (message) {
  eslint-enable
  */
 
+// Filter out unimportant logs
 addCallbacks({
   filter(log) {
       var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
@@ -91,8 +92,10 @@ addCallbacks({
 });
 
 const nameRegex = /(Node|Way): ((.*) \((\d{9,10})\)|(\d{9,10}))/g;
+const hashRegex = /#map=(\d+)\/(-?\d+.\d+)\/(-?\d+.\d+)/g;
 
-const observer = new MutationObserver( (mutationList, observer) => {
+// Scrape changing sidebar content for visit events
+const visitObserver = new MutationObserver( (mutationList, observer) => {
   for (const mutation of mutationList) {
     if (mutation.addedNodes.length == 0) {
       continue;
@@ -125,11 +128,35 @@ const observer = new MutationObserver( (mutationList, observer) => {
         name: parsedName[0][3],
         tags: tags,
       },
-      type: "visit"
-    },null, true);
+      type: "visit",
+    }, null, true);
 
   }
 });
 
-var target = document.getElementById("sidebar_content");
-observer.observe(target, {childList: true, subtree: true});
+var visitTarget = document.getElementById("sidebar_content");
+visitObserver.observe(visitTarget, {childList: true, subtree: true});
+
+
+// Watch for changes in the url for viewChange events
+var urlHash = window.location.hash;
+document.addEventListener('click', function(e){
+  if (window.location.hash !== urlHash) {
+    urlHash = window.location.hash;
+    const parsedHash = Array.from(urlHash.matchAll(hashRegex));
+
+    if (parsedHash.length == 0) {
+      return;
+    }
+
+    packageCustomLog({
+      details: {
+        zoom: parsedHash[0][1],
+        latitude: parsedHash[0][2],
+        longitude: parsedHash[0][3],
+      },
+      type: "viewChange",
+    }, null, true);
+
+  }
+});
