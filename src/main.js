@@ -70,6 +70,7 @@ function setup(config) {
                 packageCustomLog({
                     type: 'load',
                     logType: 'raw',
+                    DOM: new XMLSerializer().serializeToString(document),
                     details: {pageLoadTime: endLoadTimestamp - startLoadTimestamp}
                     }, () => {},false)
             } else {
