@@ -419,23 +419,50 @@
   var browser = detect();
   var logs$1;
   var config$1;
-  var filterHandler = null;
-  var mapHandler = null;
+
+  // Interval Logging Globals
+  var intervalID;
+  var intervalType;
+  var intervalPath;
+  var intervalTimer;
+  var intervalCounter;
+  var intervalLog;
+  var cbHandlers = {};
 
   /**
-   * Assigns a handler to filter logs out of the queue.
-   * @param  {Function} callback The handler to invoke when logging.
+   * Adds named callbacks to be executed when logging.
+   * @param  {Object } newCallbacks An object containing named callback functions.
    */
-  function setLogFilter(callback) {
-    filterHandler = callback;
+  function addCallbacks() {
+    for (var _len = arguments.length, newCallbacks = new Array(_len), _key = 0; _key < _len; _key++) {
+      newCallbacks[_key] = arguments[_key];
+    }
+    newCallbacks.forEach(function (source) {
+      var descriptors = Object.keys(source).reduce(function (descriptors, key) {
+        descriptors[key] = Object.getOwnPropertyDescriptor(source, key);
+        return descriptors;
+      }, {});
+      Object.getOwnPropertySymbols(source).forEach(function (sym) {
+        var descriptor = Object.getOwnPropertyDescriptor(source, sym);
+        if (descriptor.enumerable) {
+          descriptors[sym] = descriptor;
+        }
+      });
+      Object.defineProperties(cbHandlers, descriptors);
+    });
+    return cbHandlers;
   }
 
   /**
-   * Assigns a handler to transform logs from their default structure.
-   * @param  {Function} callback The handler to invoke when logging.
+   * Removes callbacks by name.
+   * @param  {String[]} targetKeys A list of names of functions to remove.
    */
-  function setLogMapper(callback) {
-    mapHandler = callback;
+  function removeCallbacks(targetKeys) {
+    targetKeys.forEach(function (key) {
+      if (Object.hasOwn(cbHandlers, key)) {
+        delete cbHandlers[key];
+      }
+    });
   }
 
   /**
@@ -446,8 +473,13 @@
   function initPackager(newLogs, newConfig) {
     logs$1 = newLogs;
     config$1 = newConfig;
-    filterHandler = null;
-    mapHandler = null;
+    cbHandlers = [];
+    intervalID = null;
+    intervalType = null;
+    intervalPath = null;
+    intervalTimer = null;
+    intervalCounter = 0;
+    intervalLog = null;
   }
 
   /**
@@ -486,11 +518,14 @@
       'useraleVersion': config$1.useraleVersion,
       'sessionID': config$1.sessionID
     };
-    if (typeof filterHandler === 'function' && !filterHandler(log)) {
-      return false;
-    }
-    if (typeof mapHandler === 'function') {
-      log = mapHandler(log, e);
+    for (var _i = 0, _Object$values = Object.values(cbHandlers); _i < _Object$values.length; _i++) {
+      var func = _Object$values[_i];
+      if (typeof func === 'function') {
+        log = func(log, e);
+        if (!log) {
+          return false;
+        }
+      }
     }
     logs$1.push(log);
     return true;
@@ -528,11 +563,14 @@
       'sessionID': config$1.sessionID
     };
     var log = Object.assign(metaData, customLog);
-    if (typeof filterHandler === 'function' && !filterHandler(log)) {
-      return false;
-    }
-    if (typeof mapHandler === 'function') {
-      log = mapHandler(log);
+    for (var _i2 = 0, _Object$values2 = Object.values(cbHandlers); _i2 < _Object$values2.length; _i2++) {
+      var func = _Object$values2[_i2];
+      if (typeof func === 'function') {
+        log = func(log, null);
+        if (!log) {
+          return false;
+        }
+      }
     }
     logs$1.push(log);
     return true;
@@ -549,6 +587,78 @@
       milli: Math.floor(timeStamp),
       micro: Number((timeStamp % 1).toFixed(3))
     };
+  }
+
+  /**
+   * Track intervals and gather details about it.
+   * @param {Object} e
+   * @return boolean
+   */
+  function packageIntervalLog(e) {
+    var target = getSelector(e.target);
+    var path = buildPath(e);
+    var type = e.type;
+    var timestamp = Math.floor(e.timeStamp && e.timeStamp > 0 ? config$1.time(e.timeStamp) : Date.now());
+
+    // Init - this should only happen once on initialization
+    if (intervalID == null) {
+      intervalID = target;
+      intervalType = type;
+      intervalPath = path;
+      intervalTimer = timestamp;
+      intervalCounter = 0;
+    }
+    if (intervalID !== target || intervalType !== type) {
+      // When to create log? On transition end
+      // @todo Possible for intervalLog to not be pushed in the event the interval never ends...
+
+      intervalLog = {
+        'target': intervalID,
+        'path': intervalPath,
+        'pageUrl': window.location.href,
+        'pageTitle': document.title,
+        'pageReferrer': document.referrer,
+        'browser': detectBrowser(),
+        'count': intervalCounter,
+        'duration': timestamp - intervalTimer,
+        // microseconds
+        'startTime': intervalTimer,
+        'endTime': timestamp,
+        'type': intervalType,
+        'logType': 'interval',
+        'targetChange': intervalID !== target,
+        'typeChange': intervalType !== type,
+        'userAction': false,
+        'userId': config$1.userId,
+        'toolVersion': config$1.version,
+        'toolName': config$1.toolName,
+        'useraleVersion': config$1.useraleVersion,
+        'sessionID': config$1.sessionID
+      };
+      for (var _i3 = 0, _Object$values3 = Object.values(cbHandlers); _i3 < _Object$values3.length; _i3++) {
+        var func = _Object$values3[_i3];
+        if (typeof func === 'function') {
+          intervalLog = func(intervalLog, null);
+          if (!intervalLog) {
+            return false;
+          }
+        }
+      }
+      logs$1.push(intervalLog);
+
+      // Reset
+      intervalID = target;
+      intervalType = type;
+      intervalPath = path;
+      intervalTimer = timestamp;
+      intervalCounter = 0;
+    }
+
+    // Interval is still occuring, just update counter
+    if (intervalID == target && intervalType == type) {
+      intervalCounter = intervalCounter + 1;
+    }
+    return true;
   }
 
   /**
@@ -994,8 +1104,7 @@
             type: 'load',
             logType: 'raw',
             details: {
-              pageLoadTime: endLoadTimestamp - startLoadTimestamp,
-              DOM: new XMLSerializer().serializeToString(document)
+              pageLoadTime: endLoadTimestamp - startLoadTimestamp
             }
           }, function () {}, false);
         } else {
@@ -1054,15 +1163,15 @@
     }
   }
 
+  exports.addCallbacks = addCallbacks;
   exports.buildPath = buildPath;
   exports.details = defineCustomDetails;
-  exports.filter = setLogFilter;
   exports.getSelector = getSelector;
   exports.log = log;
-  exports.map = setLogMapper;
   exports.options = options;
   exports.packageCustomLog = packageCustomLog;
   exports.packageLog = packageLog;
+  exports.removeCallbacks = removeCallbacks;
   exports.start = start;
   exports.stop = stop;
   exports.version = version;

@@ -33,8 +33,8 @@ window.onload = function () {
 export let started = false;
 export {defineCustomDetails as details} from './attachHandlers.js';
 export {
-    setLogMapper as map,
-    setLogFilter as filter,
+    addCallbacks as addCallbacks,
+    removeCallbacks as removeCallbacks,
     packageLog as packageLog,
     packageCustomLog as packageCustomLog,
     getSelector as getSelector,
@@ -70,11 +70,8 @@ function setup(config) {
                 packageCustomLog({
                     type: 'load',
                     logType: 'raw',
-                    details: {
-                        pageLoadTime: endLoadTimestamp - startLoadTimestamp,
-                        DOM: new XMLSerializer().serializeToString(document)
-                    }
-                }, () => {},false)
+                    details: {pageLoadTime: endLoadTimestamp - startLoadTimestamp}
+                    }, () => {},false)
             } else {
                 setup(config);
             }

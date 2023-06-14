@@ -434,15 +434,38 @@ function createVersionParts(count) {
 var browser$1 = detect();
 var logs$1;
 var config$1;
-var filterHandler = null;
-var mapHandler = null;
+
+// Interval Logging Globals
+var intervalID;
+var intervalType;
+var intervalPath;
+var intervalTimer;
+var intervalCounter;
+var intervalLog;
+var cbHandlers = {};
 
 /**
- * Assigns a handler to filter logs out of the queue.
- * @param  {Function} callback The handler to invoke when logging.
+ * Adds named callbacks to be executed when logging.
+ * @param  {Object } newCallbacks An object containing named callback functions.
  */
-function setLogFilter(callback) {
-  filterHandler = callback;
+function addCallbacks() {
+  for (var _len = arguments.length, newCallbacks = new Array(_len), _key = 0; _key < _len; _key++) {
+    newCallbacks[_key] = arguments[_key];
+  }
+  newCallbacks.forEach(function (source) {
+    var descriptors = Object.keys(source).reduce(function (descriptors, key) {
+      descriptors[key] = Object.getOwnPropertyDescriptor(source, key);
+      return descriptors;
+    }, {});
+    Object.getOwnPropertySymbols(source).forEach(function (sym) {
+      var descriptor = Object.getOwnPropertyDescriptor(source, sym);
+      if (descriptor.enumerable) {
+        descriptors[sym] = descriptor;
+      }
+    });
+    Object.defineProperties(cbHandlers, descriptors);
+  });
+  return cbHandlers;
 }
 
 /**
@@ -453,8 +476,13 @@ function setLogFilter(callback) {
 function initPackager(newLogs, newConfig) {
   logs$1 = newLogs;
   config$1 = newConfig;
-  filterHandler = null;
-  mapHandler = null;
+  cbHandlers = [];
+  intervalID = null;
+  intervalType = null;
+  intervalPath = null;
+  intervalTimer = null;
+  intervalCounter = 0;
+  intervalLog = null;
 }
 
 /**
@@ -493,11 +521,14 @@ function packageLog(e, detailFcn) {
     'useraleVersion': config$1.useraleVersion,
     'sessionID': config$1.sessionID
   };
-  if (typeof filterHandler === 'function' && !filterHandler(log)) {
-    return false;
-  }
-  if (typeof mapHandler === 'function') {
-    log = mapHandler(log, e);
+  for (var _i = 0, _Object$values = Object.values(cbHandlers); _i < _Object$values.length; _i++) {
+    var func = _Object$values[_i];
+    if (typeof func === 'function') {
+      log = func(log, e);
+      if (!log) {
+        return false;
+      }
+    }
   }
   logs$1.push(log);
   return true;
@@ -535,11 +566,14 @@ function packageCustomLog(customLog, detailFcn, userAction) {
     'sessionID': config$1.sessionID
   };
   var log = Object.assign(metaData, customLog);
-  if (typeof filterHandler === 'function' && !filterHandler(log)) {
-    return false;
-  }
-  if (typeof mapHandler === 'function') {
-    log = mapHandler(log);
+  for (var _i2 = 0, _Object$values2 = Object.values(cbHandlers); _i2 < _Object$values2.length; _i2++) {
+    var func = _Object$values2[_i2];
+    if (typeof func === 'function') {
+      log = func(log, null);
+      if (!log) {
+        return false;
+      }
+    }
   }
   logs$1.push(log);
   return true;
@@ -556,6 +590,78 @@ function extractTimeFields(timeStamp) {
     milli: Math.floor(timeStamp),
     micro: Number((timeStamp % 1).toFixed(3))
   };
+}
+
+/**
+ * Track intervals and gather details about it.
+ * @param {Object} e
+ * @return boolean
+ */
+function packageIntervalLog(e) {
+  var target = getSelector(e.target);
+  var path = buildPath(e);
+  var type = e.type;
+  var timestamp = Math.floor(e.timeStamp && e.timeStamp > 0 ? config$1.time(e.timeStamp) : Date.now());
+
+  // Init - this should only happen once on initialization
+  if (intervalID == null) {
+    intervalID = target;
+    intervalType = type;
+    intervalPath = path;
+    intervalTimer = timestamp;
+    intervalCounter = 0;
+  }
+  if (intervalID !== target || intervalType !== type) {
+    // When to create log? On transition end
+    // @todo Possible for intervalLog to not be pushed in the event the interval never ends...
+
+    intervalLog = {
+      'target': intervalID,
+      'path': intervalPath,
+      'pageUrl': window.location.href,
+      'pageTitle': document.title,
+      'pageReferrer': document.referrer,
+      'browser': detectBrowser(),
+      'count': intervalCounter,
+      'duration': timestamp - intervalTimer,
+      // microseconds
+      'startTime': intervalTimer,
+      'endTime': timestamp,
+      'type': intervalType,
+      'logType': 'interval',
+      'targetChange': intervalID !== target,
+      'typeChange': intervalType !== type,
+      'userAction': false,
+      'userId': config$1.userId,
+      'toolVersion': config$1.version,
+      'toolName': config$1.toolName,
+      'useraleVersion': config$1.useraleVersion,
+      'sessionID': config$1.sessionID
+    };
+    for (var _i3 = 0, _Object$values3 = Object.values(cbHandlers); _i3 < _Object$values3.length; _i3++) {
+      var func = _Object$values3[_i3];
+      if (typeof func === 'function') {
+        intervalLog = func(intervalLog, null);
+        if (!intervalLog) {
+          return false;
+        }
+      }
+    }
+    logs$1.push(intervalLog);
+
+    // Reset
+    intervalID = target;
+    intervalType = type;
+    intervalPath = path;
+    intervalTimer = timestamp;
+    intervalCounter = 0;
+  }
+
+  // Interval is still occuring, just update counter
+  if (intervalID == target && intervalType == type) {
+    intervalCounter = intervalCounter + 1;
+  }
+  return true;
 }
 
 /**
@@ -936,8 +1042,7 @@ function setup(config) {
           type: 'load',
           logType: 'raw',
           details: {
-            pageLoadTime: endLoadTimestamp - startLoadTimestamp,
-            DOM: new XMLSerializer().serializeToString(document)
+            pageLoadTime: endLoadTimestamp - startLoadTimestamp
           }
         }, function () {}, false);
       } else {
@@ -1011,11 +1116,14 @@ function queueLog(log) {
 function injectScript(config) {
   options(config);
   //  start();  not necessary given that autostart in place, and option is masked from WebExt users
-  setLogFilter(function (log) {
-    queueLog(Object.assign({}, log, {
-      pageUrl: document.location.href
-    }));
-    return false;
+  addCallbacks({
+    "function": function _function(log) {
+      queueLog(Object.assign({}, log, {
+        pageUrl: document.location.href
+      }));
+      console.log(log);
+      return false;
+    }
   });
 }
 browser.runtime.onMessage.addListener(function (message) {

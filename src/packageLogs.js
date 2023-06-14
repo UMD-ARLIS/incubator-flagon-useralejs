@@ -31,23 +31,61 @@ let intervalLog;
 
 export let filterHandler = null;
 export let mapHandler = null;
+export let cbHandlers = {};
 
 /**
  * Assigns a handler to filter logs out of the queue.
+ * @deprecated Use addCallbacks and removeCallbacks instead
  * @param  {Function} callback The handler to invoke when logging.
  */
 export function setLogFilter(callback) {
+  console.warn("setLogFilter() is deprecated and will be removed in a futre release");
   filterHandler = callback;
 }
 
 /**
  * Assigns a handler to transform logs from their default structure.
+ * @deprecated Use addCallbacks and removeCallbacks instead
  * @param  {Function} callback The handler to invoke when logging.
  */
 export function setLogMapper(callback) {
+  console.warn("setLogMapper() is deprecated and will be removed in a futre release");
   mapHandler = callback;
 }
 
+/**
+ * Adds named callbacks to be executed when logging.
+ * @param  {Object } newCallbacks An object containing named callback functions.
+ */
+export function addCallbacks(...newCallbacks) {
+  newCallbacks.forEach((source) => {
+    const descriptors = Object.keys(source).reduce((descriptors, key) => {
+      descriptors[key] = Object.getOwnPropertyDescriptor(source, key);
+      return descriptors;
+    }, {});
+
+    Object.getOwnPropertySymbols(source).forEach((sym) => {
+      const descriptor = Object.getOwnPropertyDescriptor(source, sym);
+      if (descriptor.enumerable) {
+        descriptors[sym] = descriptor;
+      }
+    });
+    Object.defineProperties(cbHandlers, descriptors);
+  });
+  return cbHandlers;
+}
+
+/**
+ * Removes callbacks by name.
+ * @param  {String[]} targetKeys A list of names of functions to remove.
+ */
+export function removeCallbacks(targetKeys) {
+  targetKeys.forEach(key => {
+    if(Object.hasOwn(cbHandlers, key)) {
+      delete cbHandlers[key];
+    }
+  });
+}
 
 /**
  * Assigns the config and log container to be used by the logging functions.
@@ -57,8 +95,7 @@ export function setLogMapper(callback) {
 export function initPackager(newLogs, newConfig) {
   logs = newLogs;
   config = newConfig;
-  filterHandler = null;
-  mapHandler = null;
+  cbHandlers = [];
   intervalID = null;
   intervalType = null;
   intervalPath = null;
@@ -117,8 +154,16 @@ export function packageLog(e, detailFcn) {
     log = mapHandler(log, e);
   }
 
-  logs.push(log);
+  for (const func of Object.values(cbHandlers)) {
+    if (typeof func === 'function') {
+      log = func(log, e);
+      if(!log) {
+        return false;
+      }
+    }
+  }
 
+  logs.push(log);
   return true;
 }
 
@@ -164,6 +209,15 @@ export function packageCustomLog(customLog, detailFcn, userAction) {
 
     if (typeof mapHandler === 'function') {
         log = mapHandler(log);
+    }
+
+    for (const func of Object.values(cbHandlers)) {
+      if (typeof func === 'function') {
+        log = func(log, null);
+        if(!log) {
+          return false;
+        }
+      }
     }
 
     logs.push(log);
@@ -237,6 +291,15 @@ export function packageIntervalLog(e) {
 
         if (typeof mapHandler === 'function') {
           intervalLog = mapHandler(intervalLog, e);
+        }
+
+        for (const func of Object.values(cbHandlers)) {
+          if (typeof func === 'function') {
+            intervalLog = func(intervalLog, null);
+            if(!intervalLog) {
+              return false;
+            }
+          }
         }
 
         logs.push(intervalLog);

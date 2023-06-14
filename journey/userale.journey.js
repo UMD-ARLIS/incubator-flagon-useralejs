@@ -24,7 +24,7 @@ describe('Userale logging', () => {
         cy.wait('@backend').then(xhr => {
             const body = xhr.request.body
             const pageLoadLog = body[0]
-            expect(pageLoadLog['pageLoadTime']).to.be.greaterThan(0)
+            expect(pageLoadLog['details']['pageLoadTime']).to.be.greaterThan(0)
             expect(pageLoadLog).to.contain({
                 logType: 'raw',
                 type: 'load'
@@ -42,6 +42,24 @@ describe('Userale logging', () => {
             const actualPath = buttonClickLog.path
             const expectedPath = ["button#test_button", "div.container", "body", "html", "#document", "Window"]
             expect(actualPath).to.deep.equal(expectedPath)
+        })
+    });
+
+    it('executes added callbacks', () => {
+        cy.visit('http://localhost:8000')
+        cy.wait('@backend')
+        cy.contains(/click me/i).click()
+        cy.wait('@backend').then(xhr => {
+            const body = xhr.request.body
+            const buttonClickLog = body.find(
+                log => log.target === 'button#test_button'
+                && log.logType === 'custom')
+                
+            expect(buttonClickLog).to.have.property('customLabel');
+
+            const actualValue = buttonClickLog.customLabel
+            const expectedValue = 'map & packageLog Example'
+            expect(actualValue).to.equal(expectedValue)
         })
     });
 });
