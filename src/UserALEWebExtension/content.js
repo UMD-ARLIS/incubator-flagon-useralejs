@@ -75,6 +75,8 @@ browser.runtime.onMessage.addListener(function (message) {
   }
 });
 
+
+console.log("musa did this push work?")
 /*
  eslint-enable
  */
