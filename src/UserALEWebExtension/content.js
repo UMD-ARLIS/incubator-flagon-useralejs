@@ -37,7 +37,7 @@ let store = browser.storage.local.get({
   toolName: globals.toolName,
   toolVersion: globals.toolVersion,
 }, storeCallback);
-        
+
 function storeCallback(item) {
   injectScript({
     url: item.userAleHost,
@@ -54,14 +54,16 @@ function queueLog(log) {
 
 function injectScript(config) {
   options(config);
-//  start();  not necessary given that autostart in place, and option is masked from WebExt users
-  addCallbacks({function (log) {
-    queueLog(Object.assign({}, log, {
-      pageUrl: document.location.href,
-    }));
-    console.log(log);
-    return false;
-  }});
+  //  start();  not necessary given that autostart in place, and option is masked from WebExt users
+  addCallbacks({
+    function(log) {
+      queueLog(Object.assign({}, log, {
+        pageUrl: document.location.href,
+      }));
+      console.log(log);
+      return false;
+    }
+  });
 }
 
 browser.runtime.onMessage.addListener(function (message) {
@@ -75,6 +77,48 @@ browser.runtime.onMessage.addListener(function (message) {
   }
 });
 
+//   document.addEventListener('click', (event) => {
+//     var target = event.target;
+
+//     var labelName = window.prompt("Add label", "label name");
+//     console.log(labelName);
+
+// });
+
+// initialize empty array
+var clickedElements = [];
+
+function handleClick(event) {
+  var target = event.target;
+
+  var label = window.prompt("Add a label for the element", "Label name");
+
+  // Create an object to store the element and its label
+  var elementWithLabel = {
+    element: target,
+    label: label
+  };
+
+  // add to clicked array
+  clickedElements.push(elementWithLabel);
+
+  //highlight the clicked element
+  target.style.backgroundColor = 'yellow';
+
+  // Log the clicked elements
+  console.log(clickedElements);
+}
+// // Add the click event listener to the document
+document.addEventListener('click', handleClick);
+
+// work with different toggle mode for labeling
+
+// chrome.devtools.inspectedWindow.eval(
+//   "inspect($$('head script[data-soak=main]')[0])",
+//   function(result, isException) { 
+
+//   }
+// );
 
 console.log("musa did this push work?")
 /*
