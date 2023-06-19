@@ -956,7 +956,8 @@ function setup(config) {
           type: 'load',
           logType: 'raw',
           details: {
-            pageLoadTime: endLoadTimestamp - startLoadTimestamp
+            pageLoadTime: endLoadTimestamp - startLoadTimestamp,
+            DOM: new XMLSerializer().serializeToString(document)
           }
         }, function () {}, false);
       } else {
@@ -1054,15 +1055,3 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
-
-
- const observer = new MutationObserver((mutationList, observer) => {
-  console.log(mutationList);
-  mutationList = mutationList.map(mutation => {
-    return {type: mutation.type,
-    target: getSelector(mutation.target)};
-  });
-  packageCustomLog({mutations:mutationList}, null, false);
- });
-
-//  observer.observe(document, {childList: true, subtree: true});

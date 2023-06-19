@@ -1018,7 +1018,8 @@
             type: 'load',
             logType: 'raw',
             details: {
-              pageLoadTime: endLoadTimestamp - startLoadTimestamp
+              pageLoadTime: endLoadTimestamp - startLoadTimestamp,
+              DOM: new XMLSerializer().serializeToString(document)
             }
           }, function () {}, false);
         } else {
