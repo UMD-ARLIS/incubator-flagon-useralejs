@@ -32,7 +32,10 @@ Additional documentation and a demonstration can be found at the [Apache Flagon 
 [Contributing](https://github.com/apache/flagon-useralejs#contributing)  
 [License](https://github.com/apache/flagon-useralejs#license)
 
+## What's New in Version 2.3.1?
+
 ## What's New in Version 2.3.0?
+
 
 - Fixes issue in autostart configurations and start(), stop() export usage
 - Adds additional unit tests for autostart configurations
