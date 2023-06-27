@@ -33,16 +33,10 @@ Additional documentation and a demonstration can be found at the [Apache Flagon 
 [License](https://github.com/apache/flagon-useralejs#license)
 
 ## What's New in Version 2.3.1?
+- Rapid relabeling of DOM elements through click and popup functionality
+- Console logging of user-friendly labels
+- Browser side storage of DOM elements and label key value pairs, facilitating cross-site identification of user behavior
 
-## What's New in Version 2.3.0?
-
-
-- Fixes issue in autostart configurations and start(), stop() export usage
-- Adds additional unit tests for autostart configurations
-- Adds React App.js example/test utility
-- Adds additional UserALE.js custom logging examples
-- Minor updates to update deprecated downstream dev dependencies
-- Minor changes to documentation, updated examples
 
 See our [CHANGELOG](https://github.com/apache/flagon-useralejs/blob/master/CHANGELOG.md) for a complete list of changes.
 
