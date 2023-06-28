@@ -1130,7 +1130,7 @@ addCallbacks({
     return log;
   }
 });
-var nameRegex = /(Node|Way): ((.*) \((\d{9,10})\)|(\d{9,10}))/g;
+var nameRegex = /(Node|Way): ((.*) \((\d+)\)|(\d+))/g;
 var hashRegex = /#map=(\d+)\/(-?\d+.\d+)\/(-?\d+.\d+)/g;
 
 // Scrape changing sidebar content for visit events

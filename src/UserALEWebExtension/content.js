@@ -91,7 +91,7 @@ addCallbacks({
   }
 });
 
-const nameRegex = /(Node|Way): ((.*) \((\d{9,10})\)|(\d{9,10}))/g;
+const nameRegex = /(Node|Way): ((.*) \((\d+)\)|(\d+))/g;
 const hashRegex = /#map=(\d+)\/(-?\d+.\d+)\/(-?\d+.\d+)/g;
 
 // Scrape changing sidebar content for visit events
