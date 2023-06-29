@@ -20,6 +20,12 @@
 import * as globals from './globals';
 import * as MessageTypes from './messageTypes.js';
 import { addCallbacks, options, start } from '../main.js';
+import { getSelector } from '../packageLogs.js';
+
+let popup = ""
+var userlabel = ""
+var userFunction = ""
+
 
 // browser is defined in firefox, but not in chrome. In chrome, they use
 // the 'chrome' global instead. Let's map it to browser so we don't have
@@ -52,19 +58,54 @@ function queueLog(log) {
   browser.runtime.sendMessage({ type: MessageTypes.ADD_LOG, payload: log });
 }
 
+function getFriendly(target){
+  //checking if the target value is also a key in an object in the clickedElements array
+  //if it is, append the label of the matched target
+
+  const value = sessionStorage.getItem('userFriendlyArray');
+
+
+  if (value !== null) {
+    //looks in session storage for label array and stores it locally
+    const storedArray = JSON.parse(value);
+
+    //finds the target value for each labeled element and tries to find a match
+    const foundElement = storedArray.filter(obj => obj.element === target);
+
+    //if it has been labeled, search for the label value in the object and re-log it
+    if (foundElement.length > 0){
+      const firstElement = foundElement[0]
+      const matchedLabel = firstElement['label'];
+
+      if (matchedLabel) {
+        return (matchedLabel)
+        }
+      else{
+        return(null)
+      };
+    };
+  };
+};
+
 function injectScript(config) {
   options(config);
   //  start();  not necessary given that autostart in place, and option is masked from WebExt users
   addCallbacks({
     function(log) {
+
+      friendly = getFriendly(log['target'])
+      log['friendlyTarget'] = friendly
+
       queueLog(Object.assign({}, log, {
         pageUrl: document.location.href,
       }));
-      console.log(log);
+
+      console.log(log)
       return false;
     }
   });
-}
+};
+
 
 browser.runtime.onMessage.addListener(function (message) {
   if (message.type === MessageTypes.CONFIG_CHANGE) {
@@ -77,50 +118,58 @@ browser.runtime.onMessage.addListener(function (message) {
   }
 });
 
-//   document.addEventListener('click', (event) => {
-//     var target = event.target;
-
-//     var labelName = window.prompt("Add label", "label name");
-//     console.log(labelName);
-
-// });
-
-// initialize empty array
 var clickedElements = [];
 
+//handles user label clicks
 function handleClick(event) {
+
+  //sets the target variable
   var target = event.target;
 
-  var label = window.prompt("Add a label for the element", "Label name");
+  //initialize session storage
+  sessionStorage.setItem("target", event.target.tagName.toLowerCase());
 
-  // Create an object to store the element and its label
-  var elementWithLabel = {
-    element: target,
-    label: label
+  //if (event.key == "Shift") {
+
+    //build popup window
+    popup = window.open('', 'name', 'width=200, height=200')
+    popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>")
+    popup.document.getElementById('button').addEventListener("click", function(){
+
+    //creates the two input fields
+    userlabel = popup.document.querySelector("#input1").value
+    userFunction = popup.document.querySelector("#input2").value  
+
+    // Create an object to store the element and its label
+    var elementWithLabel = {
+      element: getSelector(target),
+      label: userlabel,
+      functionality : userFunction
+    };
+
+    // add to clicked array
+    clickedElements.push(elementWithLabel);
+    sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements))
+
+    //highlight the clicked element
+    target.style.border = "thick dashed #FFA500";
+
+    // Log the clicked elements and closes the tab
+    // console.log(clickedElements);
+    popup.close()
+    })
+
+    //closes the tab if cancel is clicked
+    popup.document.getElementById('cancel').addEventListener("click", function(){
+    popup.close()})
+
   };
+//};
 
-  // add to clicked array
-  clickedElements.push(elementWithLabel);
-
-  //highlight the clicked element
-  target.style.backgroundColor = 'yellow';
-
-  // Log the clicked elements
-  console.log(clickedElements);
-}
-// // Add the click event listener to the document
+// Add the click event listener to the document
 document.addEventListener('click', handleClick);
 
-// work with different toggle mode for labeling
 
-// chrome.devtools.inspectedWindow.eval(
-//   "inspect($$('head script[data-soak=main]')[0])",
-//   function(result, isException) { 
-
-//   }
-// );
-
-console.log("musa did this push work?")
 /*
  eslint-enable
  */

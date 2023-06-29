@@ -124,6 +124,7 @@ export function packageLog(e, detailFcn) {
     (e.timeStamp && e.timeStamp > 0) ? config.time(e.timeStamp) : Date.now()
   );
 
+  
   let log = {
     'target' : getSelector(e.target),
     'path' : buildPath(e),
@@ -145,6 +146,7 @@ export function packageLog(e, detailFcn) {
     'useraleVersion': config.useraleVersion,
     'sessionID': config.sessionID,
   };
+
 
   if ((typeof filterHandler === 'function') && !filterHandler(log)) {
     return false;

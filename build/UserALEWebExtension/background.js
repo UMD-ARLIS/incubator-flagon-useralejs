@@ -602,6 +602,18 @@ browser.tabs.onZoomChange.addListener(function (e) {
   });
 });
 
+// chrome.contextMenus.create({
+//   id: "edit",
+//   title: "Enter UserALE Edit Mode",
+//   contexts:["page"]  // ContextType
+// });
+
+// chrome.contextMenus.onClicked.addListener(function(info, tab) {
+//   if (info.menuItemId === "edit") {
+//     console.log("hey");
+//     // Perform any additional actions you want
+//   }
+// });
 /*
  eslint-enable
  */

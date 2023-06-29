@@ -9,6 +9,7 @@
   "permissions": [
     "activeTab",
     "storage",
+    "contextMenus",
     "tabs",
     "<all_urls>"
   ],
@@ -26,5 +27,9 @@
   ],
   "options_ui": {
     "page": "optionsPage.html"
-  }
+  },
+  "web_accessible_resources": [
+    "content.js"
+ ]
+
 }
