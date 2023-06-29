@@ -32,14 +32,11 @@ Additional documentation and a demonstration can be found at the [Apache Flagon 
 [Contributing](https://github.com/apache/flagon-useralejs#contributing)  
 [License](https://github.com/apache/flagon-useralejs#license)
 
-## What's New in Version 2.3.0?
+## What's New in Version 2.3.1?
+- Rapid relabeling of DOM elements through click and popup functionality
+- Console logging of user-friendly labels
+- Browser side storage of DOM elements and label key value pairs, facilitating cross-site identification of user behavior
 
-- Fixes issue in autostart configurations and start(), stop() export usage
-- Adds additional unit tests for autostart configurations
-- Adds React App.js example/test utility
-- Adds additional UserALE.js custom logging examples
-- Minor updates to update deprecated downstream dev dependencies
-- Minor changes to documentation, updated examples
 
 See our [CHANGELOG](https://github.com/apache/flagon-useralejs/blob/master/CHANGELOG.md) for a complete list of changes.
 
@@ -210,6 +207,13 @@ We provide a number of examples to illustrate how the [functions above](https://
 can be used with sample webpages and logging servers. These are tailored for [module examples](https://github.com/apache/flagon-useralejs/tree/master/example/webpackUserAleExample)
 and [script-tag examples](https://github.com/apache/flagon-useralejs/tree/master/example).
 Select examples are below:
+
+Example of user-directed rapid relabeling of DOM elements:
+
+
+https://github.com/UMD-ARLIS/incubator-flagon-useralejs/assets/66893046/659adc63-3ea5-46cf-9b38-2298b04944fb
+
+
 
 Filter your logs with `userale.filter`:
 
