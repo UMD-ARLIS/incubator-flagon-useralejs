@@ -208,6 +208,13 @@ can be used with sample webpages and logging servers. These are tailored for [mo
 and [script-tag examples](https://github.com/apache/flagon-useralejs/tree/master/example).
 Select examples are below:
 
+Example of user-directed rapid relabeling of DOM elements:
+
+
+https://github.com/UMD-ARLIS/incubator-flagon-useralejs/assets/66893046/659adc63-3ea5-46cf-9b38-2298b04944fb
+
+
+
 Filter your logs with `userale.filter`:
 
 ```html
