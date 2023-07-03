@@ -1075,6 +1075,7 @@ function options(newConfig) {
 var popup = "";
 var userlabel = "";
 var userFunction = "";
+var isShiftPressed = false;
 
 // browser is defined in firefox, but not in chrome. In chrome, they use
 // the 'chrome' global instead. Let's map it to browser so we don't have
@@ -1159,7 +1160,11 @@ browser.runtime.onMessage.addListener(function (message) {
   }
 });
 var clickedElements = [];
-
+document.addEventListener("keydown", function (event) {
+  if (event.key == "Shift") {
+    isShiftPressed = true;
+  }
+});
 //handles user label clicks
 function handleClick(event) {
   //sets the target variable
@@ -1167,8 +1172,41 @@ function handleClick(event) {
 
   //initialize session storage
   sessionStorage.setItem("target", event.target.tagName.toLowerCase());
-  if (event.key == "Shift") {
+  if (isShiftPressed == true) {
     //build popup window
+    popup = window.open('', 'name', 'width=200, height=200');
+    if (popup.document.contains(popup.document.getElementById('button')) == false) {
+      popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
+    }
+    popup.document.getElementById('button').addEventListener("click", function () {
+      //creates the two input fields
+      userlabel = popup.document.querySelector("#input1").value;
+      userFunction = popup.document.querySelector("#input2").value;
+
+      // Create an object to store the element and its label
+      var batchElements = {
+        element: getSelector(target),
+        label: userlabel,
+        functionality: userFunction
+      };
+
+      // add to clicked array
+      clickedElements.push(batchElements);
+      sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements));
+
+      //highlight the clicked element
+      target.style.border = "thick dashed #FFA500";
+
+      // Log the clicked elements and closes the tab
+      // console.log(clickedElements);
+      popup.close();
+    });
+
+    //closes the tab if cancel is clicked
+    popup.document.getElementById('cancel').addEventListener("click", function () {
+      popup.close();
+    });
+  } else {
     popup = window.open('', 'name', 'width=200, height=200');
     popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
     popup.document.getElementById('button').addEventListener("click", function () {
@@ -1201,7 +1239,16 @@ function handleClick(event) {
     });
   }
 }
-
+//};
+document.addEventListener("keyup", function (event) {
+  if (event.key == "Shift") {
+    isShiftPressed = false;
+    // label = window.prompt("Add a label for these elements", "Label name");
+    for (var i = 0; i < batchElements.length; i++) {
+      batchElements[i].label = userlabel;
+    }
+  }
+});
 // Add the click event listener to the document
 document.addEventListener('click', handleClick);
 
