@@ -79,15 +79,54 @@ browser.runtime.onMessage.addListener(function (message) {
  eslint-enable
  */
 
-// Filter out unimportant logs
+async function getTargetStr(event) {
+  let el = event.target;
+
+  if(el instanceof Element && el.classList.contains("leaflet-interactive")) {
+    await new Promise(r => setTimeout(r, 1));
+    return document.location.pathname;
+  }
+
+  // https://stackoverflow.com/questions/8588301/how-to-generate-unique-css-selector-for-dom-element
+  let path = [], parent;
+  while(parent = el.parentNode) {
+    path.unshift(`${el.tagName}:nth-child(${[].indexOf.call(parent.children, el)+1})`);
+    el = parent;
+  }
+  return `${path.join(' > ')}`.toLowerCase();
+}
+
+// https://stackoverflow.com/questions/40031688/javascript-arraybuffer-to-hex
+function buf2hex(buffer) {
+  return [...new Uint8Array(buffer)]
+    .map(x => x.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function getTargetHash(event) {
+  if(!(event instanceof window.Event)) {
+    return null
+  }
+
+  const encoder = new TextEncoder();
+  const data = await getTargetStr(event);
+  const hash = await crypto.subtle.digest("SHA-256", encoder.encode(data));
+  return buf2hex(hash);
+}
+
 addCallbacks({
   filter(log) {
-      var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
-      var logType_array = ['interval'];
-      if(type_array.includes(log.type) || logType_array.includes(log.logType)) {
-          return false;
-      }
-      return log;
+    var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
+    var logType_array = ['interval'];
+    if(type_array.includes(log.type) || logType_array.includes(log.logType)) {
+      return false;
+    }
+    return log;
+  },
+
+  addTargetHash(log, e) {
+    getTargetHash(e).then((hash) => log["targetHash"] = hash)
+    return log;
   }
 });
 
