@@ -194,21 +194,49 @@ browser.tabs.onZoomChange.addListener(function (e) {
   });
 });
 
+var editingMode = false;
+
+// Store the variable value in chrome.storage
+chrome.storage.local.set({ editingMode: editingMode });
+
+chrome.contextMenus.create({
+  id: "edit",
+  title: "Enter Relabeling Mode",
+  contexts:["all"]  // ContextType
+});
+
+chrome.contextMenus.create({
+  id: "batchEdit",
+  title: "Enter Batch Relabeling Mode",
+  contexts:["all"]  // ContextType
+});
+
+//clicking on the context menu itself
+ chrome.contextMenus.onClicked.addListener(function(info, tab) {
+   if (info.menuItemId === "edit") {
+    chrome.tabs.sendMessage(tab.id, { action: 'updateEditingMode', value: true });
+   }
+ });
 
 
-// chrome.contextMenus.create({
-//   id: "edit",
-//   title: "Enter UserALE Edit Mode",
-//   contexts:["page"]  // ContextType
-// });
+//add logic for batch annotation
 
 
-// chrome.contextMenus.onClicked.addListener(function(info, tab) {
-//   if (info.menuItemId === "edit") {
-//     console.log("hey");
-//     // Perform any additional actions you want
-//   }
-// });
+// Listen for the message to retrieve the boolean variable value
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === 'getEditingMode') {
+
+    chrome.storage.local.get('editingMode', function(result) {
+      var editingMode = result.editingMode;
+
+      // Send the variable value as a response
+      sendResponse({ editingMode: editingMode });
+    });
+
+    return true; 
+  }
+});
+
 /*
  eslint-enable
  */

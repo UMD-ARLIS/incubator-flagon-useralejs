@@ -127,6 +127,32 @@ document.addEventListener("keydown", function (event) {
     isShiftPressed = true;
   }
 });
+
+
+var editingMode = false;
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === 'updateEditingMode') {
+    editingMode = request.value;
+    console.log('Boolean variable updated:', editingMode);
+  }
+});
+
+
+// chrome.runtime.sendMessage({ action: 'getEditingMode' }, function(response) {
+//   // Access the value from the response
+//   var editingMode = response.editingMode;
+//   // Perform actions with the boolean variable
+//   if (editingMode == true) {
+//     // The variable is true
+//     console.log('The boolean variable is true');
+//   } else {
+//     // The variable is false
+//     console.log('The boolean variable is false');
+//   }
+// });
+
+
 //handles user label clicks
 function handleClick(event) {
 
@@ -214,6 +240,7 @@ document.addEventListener("keyup", function (event) {
     }
   }
 });
+
 // Add the click event listener to the document
 document.addEventListener('click', handleClick);
 
