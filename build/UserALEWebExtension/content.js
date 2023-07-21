@@ -1075,7 +1075,6 @@ function options(newConfig) {
 var popup = "";
 var userlabel = "";
 var userFunction = "";
-var isShiftPressed = false;
 
 // browser is defined in firefox, but not in chrome. In chrome, they use
 // the 'chrome' global instead. Let's map it to browser so we don't have
@@ -1108,10 +1107,34 @@ function queueLog(log) {
     payload: log
   });
 }
-function getFriendly(target) {
+function getFriendlyPath(path) {
+  var rawPath = path.slice(); // Copy the array to avoid mutating the original
+  var stored = sessionStorage.getItem('userFriendlyArray');
+  if (stored !== null) {
+    var storedArray = JSON.parse(stored);
+    storedArray.forEach(function (item) {
+      var curPath = JSON.parse(item.targetPath);
+
+      // Find the start index of curPath in rawPath
+      var startIndex = rawPath.findIndex(function (element, index) {
+        return rawPath.slice(index, index + curPath.length).every(function (val, subIndex) {
+          return val === curPath[subIndex];
+        });
+      });
+
+      // If curPath is found in rawPath, replace the starting element with the label
+      if (startIndex !== -1) {
+        rawPath[startIndex] = item.label;
+      }
+    });
+  }
+  return rawPath;
+}
+function getFriendlyTarget(targetPath) {
   //checking if the target value is also a key in an object in the clickedElements array
   //if it is, append the label of the matched target
 
+  var path = JSON.stringify(targetPath);
   var value = sessionStorage.getItem('userFriendlyArray');
   if (value !== null) {
     //looks in session storage for label array and stores it locally
@@ -1119,15 +1142,17 @@ function getFriendly(target) {
 
     //finds the target value for each labeled element and tries to find a match
     var foundElement = storedArray.filter(function (obj) {
-      return obj.element === target;
+      return obj.targetPath === path;
     });
 
     //if it has been labeled, search for the label value in the object and re-log it
     if (foundElement.length > 0) {
       var firstElement = foundElement[0];
       var matchedLabel = firstElement['label'];
+      var labelFunc = firstElement['functionality'];
+      var returnArray = [matchedLabel, labelFunc];
       if (matchedLabel) {
-        return matchedLabel;
+        return returnArray;
       } else {
         return null;
       }
@@ -1139,8 +1164,13 @@ function injectScript(config) {
   //  start();  not necessary given that autostart in place, and option is masked from WebExt users
   addCallbacks({
     "function": function _function(log) {
-      friendly = getFriendly(log['target']);
-      log['friendlyTarget'] = friendly;
+      var friendlyTarget = getFriendlyTarget(log['path']);
+      if (friendlyTarget != null) {
+        log['friendlyTarget'] = friendlyTarget[0];
+        log['functionality'] = friendlyTarget[1];
+      }
+      var friendlyPath = getFriendlyPath(log['path']);
+      log['friendlyPath'] = friendlyPath;
       queueLog(Object.assign({}, log, {
         pageUrl: document.location.href
       }));
@@ -1160,97 +1190,82 @@ browser.runtime.onMessage.addListener(function (message) {
   }
 });
 var clickedElements = [];
+var batchElements = [];
 document.addEventListener("keydown", function (event) {
-  if (event.key == "Shift") {
-    isShiftPressed = true;
-  }
+  if (event.key == "Shift") ;
 });
-
-// var toggleStatus= true;
-// const toggleSwitch = document.getElementById('toggleSwitch');
-
-//   toggleSwitch.addEventListener('change', function() {
-//     if (toggleSwitch.checked) {
-//       console.log('Checkbox is checked!');
-//     } else {
-//      console.log('Checkbox is unchecked!');
-//       toggleStatus = false;
-//     }
-//   });
-
+document.addEventListener("keydown", function (event) {
+  if (event.key == "Shift") ;
+});
 var editingMode = false;
+var batchState = "default";
+var conditional = 0;
+//var tempBatchElements = [];
+var count = 0;
+function setBatchState(mode) {
+  batchState = mode;
+}
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  if (request.action === 'updateEditingMode') {
+  if (request.action === "updateEditingMode") {
     editingMode = request.value;
-    console.log('Boolean variable updated:', editingMode);
+    setBatchState("default");
+    if (conditional == 0) {
+      conditional = 1;
+    } else {
+      conditional = 0;
+    }
   }
 });
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.action === "updateBatchEditingMode") {
+    request.value;
+    setBatchState("batch");
+    count++;
 
-// chrome.runtime.sendMessage({ action: 'getEditingMode' }, function(response) {
-//   // Access the value from the response
-//   var editingMode = response.editingMode;
-//   // Perform actions with the boolean variable
-//   if (editingMode == true) {
-//     // The variable is true
-//     console.log('The boolean variable is true');
-//   } else {
-//     // The variable is false
-//     console.log('The boolean variable is false');
-//   }
-// });
+    // when the user clicks the context menu again, we want the popup to then assign all of the elements their labels
+    if (count % 2 == 0 && clickedElements.length > 0) {
+      openPopup();
+    }
+  }
+});
 
 //handles user label clicks
 function handleClick(event) {
-  //sets the target variable
+  //sets the target variable and eventPath variable
   var target = event.target;
+  var eventPath = event.composedPath();
 
-  //initialize session storage
-  sessionStorage.setItem("target", event.target.tagName.toLowerCase());
-  if (isShiftPressed == true) {
-    //build popup window
-    popup = window.open('', 'name', 'width=200, height=200');
-    if (popup.document.contains(popup.document.getElementById('button')) == false) {
-      popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
-    }
-    popup.document.getElementById('button').addEventListener("click", function () {
-      //creates the two input fields
-      userlabel = popup.document.querySelector("#input1").value;
-      userFunction = popup.document.querySelector("#input2").value;
+  // begin clicking batch elements
+  if (batchState == "batch" && count % 2 == 1) {
+    console.log("clicking elements");
+    target.style.border = "thick dashed #FFA500";
 
-      // Create an object to store the element and its label
-      var batchElements = {
-        element: getSelector(target),
-        label: userlabel,
-        functionality: userFunction
-      };
+    // Create an object to store the element and its label
+    var batchElementWithLabel = {
+      targetPath: JSON.stringify(selectorizePath(eventPath)),
+      label: userlabel,
+      functionality: userFunction
+    };
 
-      // add to clicked array
-      clickedElements.push(batchElements);
-      sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements));
+    // add to clicked array
+    clickedElements.push(batchElementWithLabel);
+    batchElements.push(batchElementWithLabel);
+    sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements));
+    console.log(clickedElements);
 
-      //highlight the clicked element
-      target.style.border = "thick dashed #FFA500";
-
-      // Log the clicked elements and closes the tab
-      // console.log(clickedElements);
-      popup.close();
-    });
-
-    //closes the tab if cancel is clicked
-    popup.document.getElementById('cancel').addEventListener("click", function () {
-      popup.close();
-    });
-  } else {
-    popup = window.open('', 'name', 'width=200, height=200');
+    // single editing
+  } else if (batchState === "default" && editingMode === true && conditional == 1) {
+    target.style.border = "thick dashed #FFA500";
+    popup = window.open("", "name", "width=200, height=200");
     popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
-    popup.document.getElementById('button').addEventListener("click", function () {
+    popup.document.getElementById("button").addEventListener("click", function () {
       //creates the two input fields
       userlabel = popup.document.querySelector("#input1").value;
       userFunction = popup.document.querySelector("#input2").value;
 
       // Create an object to store the element and its label
       var elementWithLabel = {
-        element: getSelector(target),
+        targetPath: JSON.stringify(selectorizePath(eventPath)),
         label: userlabel,
         functionality: userFunction
       };
@@ -1260,7 +1275,7 @@ function handleClick(event) {
       sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements));
 
       //highlight the clicked element
-      target.style.border = "thick dashed #FFA500";
+      //target.style.border = "thick dashed #FFA500";
 
       // Log the clicked elements and closes the tab
       // console.log(clickedElements);
@@ -1268,24 +1283,64 @@ function handleClick(event) {
     });
 
     //closes the tab if cancel is clicked
-    popup.document.getElementById('cancel').addEventListener("click", function () {
+    popup.document.getElementById("cancel").addEventListener("click", function () {
+      popup.close();
+    });
+  }
+
+  // when to actually assign all elements the same label
+  //if (lastBatchState == 'batch' && batchState == 'default') {
+  if (count > 0 && count % 2 == 0) {
+    //  build popup window
+    popup = window.open("", "name", "width=200, height=200");
+    if (popup.document.contains(popup.document.getElementById("button")) == false) {
+      popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
+    }
+    popup.document.getElementById("button").addEventListener("click", function () {
+      //creates the two input fields
+      userlabel = popup.document.querySelector("#input1").value;
+      userFunction = popup.document.querySelector("#input2").value;
+      popup.close();
+    });
+
+    //closes the tab if cancel is clicked
+    popup.document.getElementById("cancel").addEventListener("click", function () {
       popup.close();
     });
   }
 }
-//};
-document.addEventListener("keyup", function (event) {
-  if (event.key == "Shift") {
-    isShiftPressed = false;
-    // label = window.prompt("Add a label for these elements", "Label name");
-    for (var i = 0; i < batchElements.length; i++) {
-      batchElements[i].label = userlabel;
-    }
-  }
-});
 
 // Add the click event listener to the document
 document.addEventListener('click', handleClick);
+function openPopup() {
+  //  // build popup window
+  popup = window.open("", "name", "width=200, height=200");
+  if (popup.document.contains(popup.document.getElementById("button")) == false) {
+    popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
+  }
+  popup.document.getElementById("button").addEventListener("click", function () {
+    //creates the two input fields
+    userlabel = popup.document.querySelector("#input1").value;
+    userFunction = popup.document.querySelector("#input2").value;
+
+    //assign labels for the clicked elements
+    for (var i = 0; i < batchElements.length; i++) {
+      batchElements[i].label = userlabel;
+    }
+    // target.style.border = "thick dashed #FFA500";
+    clickedElements.push(batchElements);
+    console.log(clickedElements);
+
+    // Log the clicked elements and closes the tab
+    // console.log(clickedElements);
+    popup.close();
+  });
+
+  //closes the tab if cancel is clicked
+  popup.document.getElementById("cancel").addEventListener("click", function () {
+    popup.close();
+  });
+}
 
 /*
  eslint-enable

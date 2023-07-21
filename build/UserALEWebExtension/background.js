@@ -602,33 +602,45 @@ browser.tabs.onZoomChange.addListener(function (e) {
   });
 });
 var editingMode = false;
+var batchEditingMode = false;
 
 // Store the variable value in chrome.storage
 chrome.storage.local.set({
   editingMode: editingMode
 });
+chrome.storage.local.set({
+  batchEditingMode: batchEditingMode
+});
 chrome.contextMenus.create({
   id: "edit",
-  title: "Enter Relabeling Mode",
-  contexts: ["all"] // ContextType
+  title: "Enter/Exit Single Relabeling Mode",
+  contexts: ["all"]
 });
-
 chrome.contextMenus.create({
   id: "batchEdit",
-  title: "Enter Batch Relabeling Mode",
-  contexts: ["all"] // ContextType
+  title: "Enter/Exit Batch Relabeling Mode",
+  contexts: ["all"]
 });
 
+//clicking on the context menu itself
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
-  if (info.menuItemId === "edit") {
+  if (info.menuItemId === "edit" && editingMode == false) {
     chrome.tabs.sendMessage(tab.id, {
       action: 'updateEditingMode',
-      value: true
+      value: !editingMode
+    });
+  }
+});
+chrome.contextMenus.onClicked.addListener(function (info, tab) {
+  if (info.menuItemId === "batchEdit" && batchEditingMode == false) {
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'updateBatchEditingMode',
+      value: !batchEditingMode
     });
   }
 });
 
-// Listen for the message to retrieve the boolean variable value
+// Listen for the message to retrieve the boolean value
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === 'getEditingMode') {
     chrome.storage.local.get('editingMode', function (result) {
@@ -637,6 +649,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       // Send the variable value as a response
       sendResponse({
         editingMode: editingMode
+      });
+    });
+    return true;
+  }
+});
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.action === 'getBatchEditingMode') {
+    chrome.storage.local.get('batchEditingMode', function (result) {
+      var batchEditingMode = result.batchEditingMode;
+
+      // Send the variable value as a response
+      sendResponse({
+        batchEditingMode: batchEditingMode
       });
     });
     return true;

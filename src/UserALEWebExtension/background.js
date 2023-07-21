@@ -19,224 +19,245 @@
  eslint-disable
  */
 
-import * as globals from './globals';
-import * as MessageTypes from './messageTypes.js';
-import { timeStampScale } from '../getInitialSettings.js';
-import { extractTimeFields, initPackager, packageLog } from '../packageLogs.js';
-import { initSender } from '../sendLogs.js';
-
-// inherent dependency on globals.js, loaded by the webext
-
-// browser is defined in firefox, but not in chrome. In chrome, they use
-// the 'chrome' global instead. Let's map it to browser so we don't have
-// to have if-conditions all over the place.
-
-var browser = browser || chrome;
-var logs = [];
-var config = {
-  autostart: true,
-  url: 'http://localhost:8000',
-  transmitInterval: 5000,
-  logCountThreshold: 5,
-  userId: null,
-  version: null,
-  resolution: 500,
-  time: timeStampScale({}),
-  on: true,
-};
-var sessionId = 'session_' + Date.now();
-
-var getTimestamp = ((typeof performance !== 'undefined') && (typeof performance.now !== 'undefined'))
-  ? function () { return performance.now() + performance.timing.navigationStart; }
-  : Date.now;
-
-browser.storage.local.set({ sessionId: sessionId });
-
-var store = browser.storage.local.get({
-  userAleHost: globals.userAleHost,
-  userAleScript: globals.userAleScript,
-  toolUser: globals.toolUser,
-  toolName: globals.toolName,
-  toolVersion: globals.toolVersion,
-}, storeCallback);
-        
-function storeCallback(item) {
-  config = Object.assign({}, config, {
-    url: item.userAleHost,
-    userId: item.toolUser,
-    sessionID: sessionId,
-    toolName: item.toolName,
-    toolVersion: item.toolVersion
-  });
-
-  initPackager(logs, config);
-  initSender(logs, config);
-}
-
-function dispatchTabMessage(message) {
-  browser.tabs.query({}, function (tabs) {
-    tabs.forEach(function (tab) {
-      browser.tabs.sendMessage(tab.id, message);
-    });
-  });
-}
-
-function packageBrowserLog(type, logDetail) {
-  var timeFields = extractTimeFields(getTimestamp());
-
-  logs.push({
-    'target' : null,
-    'path' : null,
-    'clientTime' : timeFields.milli,
-    'microTime' : timeFields.micro,
-    'location' : null,
-    'type' : 'browser.' + type,
-    'logType': 'raw',
-    'userAction' : true,
-    'details' : logDetail,
-    'userId' : globals.toolUser,
-    'toolVersion': null,
-    'toolName': null,
-    'useraleVersion': null,
-    'sessionID': sessionId,
-  });
-}
-
-browser.runtime.onMessage.addListener(function (message) {
-  switch (message.type) {
-    case MessageTypes.CONFIG_CHANGE:
-      (function () {
-        var updatedConfig = Object.assign({}, config, {
-          url: message.payload.userAleHost,
-          userId: message.payload.toolUser,
-          toolName: message.payload.toolName,
-          toolVersion: message.payload.toolVersion
-        });
-        initPackager(logs, updatedConfig);
-        initSender(logs, updatedConfig);
-        dispatchTabMessage(message);
-      })();
-      break;
-
-    case MessageTypes.ADD_LOG:
-      (function () {
-        logs.push(message.payload);
-      })();
-      break;
-
-    default:
-      console.log('got unknown message type ', message);
-  }
-});
-
-function getTabDetailById(tabId, onReady) {
-  browser.tabs.get(tabId, function (tab) {
-    onReady({
-      active: tab.active,
-      audible: tab.audible,
-      incognito: tab.incognito,
-      index: tab.index,
-      muted: tab.mutedInfo ? tab.mutedInfo.muted : null,
-      pinned: tab.pinned,
-      selected: tab.selected,
-      tabId: tab.id,
-      title: tab.title,
-      url: tab.url,
-      windowId: tab.windowId,
-    });
-  });
-}
-
-browser.tabs.onActivated.addListener(function (e) {
-  getTabDetailById(e.tabId, function (detail) {
-    packageBrowserLog('tabs.onActivated', detail);
-  });
-});
-
-browser.tabs.onCreated.addListener(function (tab, e) {
-  packageBrowserLog('tabs.onCreated', {
-    active: tab.active,
-    audible: tab.audible,
-    incognito: tab.incognito,
-    index: tab.index,
-    muted: tab.mutedInfo ? tab.mutedInfo.muted : null,
-    pinned: tab.pinned,
-    selected: tab.selected,
-    tabId: tab.id,
-    title: tab.title,
-    url: tab.url,
-    windowId: tab.windowId,
-  });
-});
-
-browser.tabs.onDetached.addListener(function (tabId) {
-  getTabDetailById(tabId, function (detail) {
-    packageBrowserLog('tabs.onDetached', detail);
-  });
-});
-
-browser.tabs.onMoved.addListener(function (tabId) {
-  getTabDetailById(tabId, function (detail) {
-    packageBrowserLog('tabs.onMoved', detail);
-  });
-});
-
-browser.tabs.onRemoved.addListener(function (tabId) {
-  packageBrowserLog('tabs.onRemoved', { tabId: tabId });
-});
-
-browser.tabs.onZoomChange.addListener(function (e) {
-  getTabDetailById(e.tabId, function (detail) {
-    packageBrowserLog('tabs.onZoomChange', Object.assign({}, {
-      oldZoomFactor: e.oldZoomFactor,
-      newZoomFactor: e.newZoomFactor,
-    }, detail));
-  });
-});
-
-var editingMode = false;
-
-// Store the variable value in chrome.storage
-chrome.storage.local.set({ editingMode: editingMode });
-
-chrome.contextMenus.create({
-  id: "edit",
-  title: "Enter Relabeling Mode",
-  contexts:["all"]  // ContextType
-});
-
-chrome.contextMenus.create({
-  id: "batchEdit",
-  title: "Enter Batch Relabeling Mode",
-  contexts:["all"]  // ContextType
-});
-
-//clicking on the context menu itself
- chrome.contextMenus.onClicked.addListener(function(info, tab) {
-   if (info.menuItemId === "edit") {
-    chrome.tabs.sendMessage(tab.id, { action: 'updateEditingMode', value: true });
+ import * as globals from './globals';
+ import * as MessageTypes from './messageTypes.js';
+ import { timeStampScale } from '../getInitialSettings.js';
+ import { extractTimeFields, initPackager, packageLog } from '../packageLogs.js';
+ import { initSender } from '../sendLogs.js';
+ 
+ // inherent dependency on globals.js, loaded by the webext
+ 
+ // browser is defined in firefox, but not in chrome. In chrome, they use
+ // the 'chrome' global instead. Let's map it to browser so we don't have
+ // to have if-conditions all over the place.
+ 
+ var browser = browser || chrome;
+ var logs = [];
+ var config = {
+   autostart: true,
+   url: 'http://localhost:8000',
+   transmitInterval: 5000,
+   logCountThreshold: 5,
+   userId: null,
+   version: null,
+   resolution: 500,
+   time: timeStampScale({}),
+   on: true,
+ };
+ var sessionId = 'session_' + Date.now();
+ 
+ var getTimestamp = ((typeof performance !== 'undefined') && (typeof performance.now !== 'undefined'))
+   ? function () { return performance.now() + performance.timing.navigationStart; }
+   : Date.now;
+ 
+ browser.storage.local.set({ sessionId: sessionId });
+ 
+ var store = browser.storage.local.get({
+   userAleHost: globals.userAleHost,
+   userAleScript: globals.userAleScript,
+   toolUser: globals.toolUser,
+   toolName: globals.toolName,
+   toolVersion: globals.toolVersion,
+ }, storeCallback);
+         
+ function storeCallback(item) {
+   config = Object.assign({}, config, {
+     url: item.userAleHost,
+     userId: item.toolUser,
+     sessionID: sessionId,
+     toolName: item.toolName,
+     toolVersion: item.toolVersion
+   });
+ 
+   initPackager(logs, config);
+   initSender(logs, config);
+ }
+ 
+ function dispatchTabMessage(message) {
+   browser.tabs.query({}, function (tabs) {
+     tabs.forEach(function (tab) {
+       browser.tabs.sendMessage(tab.id, message);
+     });
+   });
+ }
+ 
+ function packageBrowserLog(type, logDetail) {
+   var timeFields = extractTimeFields(getTimestamp());
+ 
+   logs.push({
+     'target' : null,
+     'path' : null,
+     'clientTime' : timeFields.milli,
+     'microTime' : timeFields.micro,
+     'location' : null,
+     'type' : 'browser.' + type,
+     'logType': 'raw',
+     'userAction' : true,
+     'details' : logDetail,
+     'userId' : globals.toolUser,
+     'toolVersion': null,
+     'toolName': null,
+     'useraleVersion': null,
+     'sessionID': sessionId,
+   });
+ }
+ 
+ browser.runtime.onMessage.addListener(function (message) {
+   switch (message.type) {
+     case MessageTypes.CONFIG_CHANGE:
+       (function () {
+         var updatedConfig = Object.assign({}, config, {
+           url: message.payload.userAleHost,
+           userId: message.payload.toolUser,
+           toolName: message.payload.toolName,
+           toolVersion: message.payload.toolVersion
+         });
+         initPackager(logs, updatedConfig);
+         initSender(logs, updatedConfig);
+         dispatchTabMessage(message);
+       })();
+       break;
+ 
+     case MessageTypes.ADD_LOG:
+       (function () {
+         logs.push(message.payload);
+       })();
+       break;
+ 
+     default:
+       console.log('got unknown message type ', message);
    }
  });
-
-
-//add logic for batch annotation
-
-
-// Listen for the message to retrieve the boolean variable value
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === 'getEditingMode') {
-
-    chrome.storage.local.get('editingMode', function(result) {
-      var editingMode = result.editingMode;
-
-      // Send the variable value as a response
-      sendResponse({ editingMode: editingMode });
-    });
-
-    return true; 
-  }
-});
-
-/*
- eslint-enable
- */
+ 
+ function getTabDetailById(tabId, onReady) {
+   browser.tabs.get(tabId, function (tab) {
+     onReady({
+       active: tab.active,
+       audible: tab.audible,
+       incognito: tab.incognito,
+       index: tab.index,
+       muted: tab.mutedInfo ? tab.mutedInfo.muted : null,
+       pinned: tab.pinned,
+       selected: tab.selected,
+       tabId: tab.id,
+       title: tab.title,
+       url: tab.url,
+       windowId: tab.windowId,
+     });
+   });
+ }
+ 
+ browser.tabs.onActivated.addListener(function (e) {
+   getTabDetailById(e.tabId, function (detail) {
+     packageBrowserLog('tabs.onActivated', detail);
+   });
+ });
+ 
+ browser.tabs.onCreated.addListener(function (tab, e) {
+   packageBrowserLog('tabs.onCreated', {
+     active: tab.active,
+     audible: tab.audible,
+     incognito: tab.incognito,
+     index: tab.index,
+     muted: tab.mutedInfo ? tab.mutedInfo.muted : null,
+     pinned: tab.pinned,
+     selected: tab.selected,
+     tabId: tab.id,
+     title: tab.title,
+     url: tab.url,
+     windowId: tab.windowId,
+   });
+ });
+ 
+ browser.tabs.onDetached.addListener(function (tabId) {
+   getTabDetailById(tabId, function (detail) {
+     packageBrowserLog('tabs.onDetached', detail);
+   });
+ });
+ 
+ browser.tabs.onMoved.addListener(function (tabId) {
+   getTabDetailById(tabId, function (detail) {
+     packageBrowserLog('tabs.onMoved', detail);
+   });
+ });
+ 
+ browser.tabs.onRemoved.addListener(function (tabId) {
+   packageBrowserLog('tabs.onRemoved', { tabId: tabId });
+ });
+ 
+ browser.tabs.onZoomChange.addListener(function (e) {
+   getTabDetailById(e.tabId, function (detail) {
+     packageBrowserLog('tabs.onZoomChange', Object.assign({}, {
+       oldZoomFactor: e.oldZoomFactor,
+       newZoomFactor: e.newZoomFactor,
+     }, detail));
+   });
+ });
+ 
+ var editingMode = false;
+ var batchEditingMode = false;
+ 
+ // Store the variable value in chrome.storage
+ chrome.storage.local.set({ editingMode: editingMode });
+ chrome.storage.local.set({ batchEditingMode: batchEditingMode });
+ 
+ 
+ chrome.contextMenus.create({
+   id: "edit",
+   title: "Enter/Exit Single Relabeling Mode",
+   contexts:["all"]  
+ });
+ 
+ chrome.contextMenus.create({
+   id: "batchEdit",
+   title: "Enter/Exit Batch Relabeling Mode",
+   contexts:["all"]  
+ });
+ 
+ //clicking on the context menu itself
+  chrome.contextMenus.onClicked.addListener(function(info, tab) {
+    if (info.menuItemId === "edit" && editingMode == false) {
+     chrome.tabs.sendMessage(tab.id, { action: 'updateEditingMode', value: !editingMode });
+    }
+  });
+ 
+  chrome.contextMenus.onClicked.addListener(function(info, tab) {
+   if (info.menuItemId === "batchEdit" && batchEditingMode == false) {
+    chrome.tabs.sendMessage(tab.id, { action: 'updateBatchEditingMode', value: !batchEditingMode });
+   }
+ });
+ 
+ 
+ // Listen for the message to retrieve the boolean value
+ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+   if (request.action === 'getEditingMode') {
+ 
+     chrome.storage.local.get('editingMode', function(result) {
+       var editingMode = result.editingMode;
+ 
+       // Send the variable value as a response
+       sendResponse({ editingMode: editingMode });
+     });
+ 
+     return true; 
+   }
+ });
+ 
+ 
+ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+   if (request.action === 'getBatchEditingMode') {
+ 
+     chrome.storage.local.get('batchEditingMode', function(result) {
+       var batchEditingMode = result.batchEditingMode;
+ 
+       // Send the variable value as a response
+       sendResponse({ batchEditingMode: batchEditingMode });
+     });
+ 
+     return true; 
+   }
+ });
+ 
+ /*
+  eslint-enable
+  */
