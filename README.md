@@ -32,7 +32,7 @@ Additional documentation and a demonstration can be found at the [Apache Flagon 
 [Contributing](https://github.com/apache/flagon-useralejs#contributing)  
 [License](https://github.com/apache/flagon-useralejs#license)
 
-## What's New in Version 2.3.1?
+## What's New in Rapid Relabeling Release (Version 2.3.2)?...
 - Rapid relabeling of DOM elements through click and popup window, additional (optional) functionality label field added
 - Console logging of user-friendly labels
 - Browser side storage of DOM elements and label key value pairs, facilitating cross-site identification of user behavior
@@ -211,9 +211,13 @@ Select examples are below:
 
 Example of user-directed rapid relabeling of DOM elements:
 
-
 https://github.com/UMD-ARLIS/incubator-flagon-useralejs/assets/66893046/78630a11-c5c3-4531-be64-57e6a03366f3
 
+Usage notes:
+
+- subsequent clicks will enter/exit context menus.
+- Single edits will log the single element and its label save to session storage.
+- Batch edits will assign all clicked elements their respective lables and save to session storage.
 
 
 
