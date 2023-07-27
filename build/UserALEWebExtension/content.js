@@ -1141,20 +1141,26 @@ function getFriendlyTarget(targetPath) {
     var storedArray = JSON.parse(value);
 
     //finds the target value for each labeled element and tries to find a match
-    var foundElement = storedArray.filter(function (obj) {
-      return obj.targetPath === path;
-    });
+    for (var i = 0; i < storedArray.length; i++) {
+      console.log(storedArray[i]);
+      if (storedArray[i] != null) {
+        console.log(storedArray[i]);
+        var foundElement = storedArray.filter(function (obj) {
+          return obj.targetPath === path;
+        });
 
-    //if it has been labeled, search for the label value in the object and re-log it
-    if (foundElement.length > 0) {
-      var firstElement = foundElement[0];
-      var matchedLabel = firstElement['label'];
-      var labelFunc = firstElement['functionality'];
-      var returnArray = [matchedLabel, labelFunc];
-      if (matchedLabel) {
-        return returnArray;
-      } else {
-        return null;
+        //if it has been labeled, search for the label value in the object and re-log it
+        if (foundElement.length > 0) {
+          var firstElement = foundElement[0];
+          var matchedLabel = firstElement['label'];
+          var labelFunc = firstElement['functionality'];
+          var returnArray = [matchedLabel, labelFunc];
+          if (matchedLabel) {
+            return returnArray;
+          } else {
+            return null;
+          }
+        }
       }
     }
   }
@@ -1205,38 +1211,142 @@ var count = 0;
 function setBatchState(mode) {
   batchState = mode;
 }
+function getBatchState() {
+  return batchState;
+}
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === "updateEditingMode") {
     editingMode = request.value;
     setBatchState("default");
     if (conditional == 0) {
       conditional = 1;
+      addHighlight();
     } else {
       conditional = 0;
+      // console.log(popup)
+      // if (popup != null){
+      clearHighlight();
+      // }
     }
   }
 });
+
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.action === "updateBatchEditingMode") {
     request.value;
     setBatchState("batch");
     count++;
-
+    addHighlight();
     // when the user clicks the context menu again, we want the popup to then assign all of the elements their labels
     if (count % 2 == 0 && clickedElements.length > 0) {
       openPopup();
+      setBatchState('default');
+      if (conditional == 0) {
+        clearHighlight();
+      }
     }
   }
 });
-
+function pathPopup(path) {
+  elements = selectorizePath(path);
+  list = "<ol start='0'>" + elements.map(function (element) {
+    return "<li>".concat(element, "</li>");
+  }).join("") + "</ol>";
+  panel = window.open("", "pathWindow", "width=500, height=400");
+  panel.document.write(list);
+  panel.document.write("\n  <style>\n    ol {\n      list-style-type: none; \n      counter-reset: my-counter 0; \n    }\n    li {\n      counter-increment: my-counter; \n    }\n    li::before {\n      content: counter(my-counter) \":\"; \n      margin-right: 5px; \n      color: red;\n    }\n  </style>\n");
+}
+function clearHighlight() {
+  console.log(conditional);
+  var highlight = sessionStorage.getItem('userFriendlyArray');
+  var noHighlight = JSON.parse(highlight);
+  if (noHighlight != null) {
+    for (var i = 0; i < noHighlight.length; i++) {
+      checkHighlight = noHighlight[i]['targetPath'];
+      // checkLabel = addHighlight[i]['label']
+      var parsedHighlight = JSON.parse(checkHighlight);
+      finalVar = parsedHighlight[0];
+      if (finalVar.indexOf('.') !== -1) {
+        splitVar = finalVar.split('.')[0];
+        console.log(splitVar);
+        j = document.querySelectorAll(splitVar);
+        for (var k = 0; k < j.length; k++) {
+          if (j[k].hasAttribute('style') == true) {
+            check = j[k].getAttribute('style');
+            console.log(checkLabel);
+            if (check.includes("thick dashed rgb(255, 165, 0)")) {
+              j[k].style.border = 'thick dashed #ffffff00';
+              // j[k].style.visibility = 'transparent' 
+              console.log(j[k].getAttribute('style'));
+            }
+          }
+        }
+      } else {
+        j = document.querySelectorAll(finalVar);
+        for (var _k2 = 0; _k2 < j.length; _k2++) {
+          if (j[_k2].hasAttribute('style') == true) {
+            check = j[_k2].getAttribute('style');
+            // console.log(checkLabel)
+            if (check.includes("thick dashed rgb(255, 165, 0)")) {
+              j[_k2].style.border = 'thick dashed #ffffff00';
+              console.log(j[_k2].getAttribute('style'));
+            }
+          }
+        }
+      }
+    }
+  }
+}
+function addHighlight() {
+  var highlight = sessionStorage.getItem('userFriendlyArray');
+  var addHighlight = JSON.parse(highlight);
+  if (addHighlight != null) {
+    for (var i = 0; i < addHighlight.length; i++) {
+      checkHighlight = addHighlight[i]['targetPath'];
+      checkLabel = addHighlight[i]['label'];
+      console.log(checkLabel);
+      var parsedHighlight = JSON.parse(checkHighlight);
+      console.log(parsedHighlight);
+      finalVar = parsedHighlight[0];
+      console.log(finalVar);
+      if (finalVar.indexOf('.') !== -1) {
+        divHighlight = finalVar.split('.')[0];
+        j = document.querySelectorAll(divHighlight);
+        for (var k = 0; k < j.length; k++) {
+          if (j[k].hasAttribute('style') == true) {
+            var _check = j[k].getAttribute('style');
+            if (_check.includes('border: thick dashed rgba(255, 255, 255, 0)') && checkLabel != "") {
+              j[k].style.border = 'thick dashed #FFA500';
+            }
+          }
+        }
+      } else {
+        checkLabel = addHighlight[i]['label'];
+        console.log(parsedHighlight);
+        j = document.querySelectorAll(finalVar);
+        for (var _k4 = 0; _k4 < j.length; _k4++) {
+          if (j[_k4].hasAttribute('style') == true) {
+            var _check2 = j[_k4].getAttribute('style');
+            if (_check2.includes('border: thick dashed rgba(255, 255, 255, 0)') && checkLabel != "") {
+              j[_k4].style.border = "thick dashed #FFA500";
+            }
+          }
+        }
+      }
+    }
+  }
+}
 //handles user label clicks
 function handleClick(event) {
+  // newArr =[]
+  lastBatchState = getBatchState();
   //sets the target variable and eventPath variable
   var target = event.target;
   var eventPath = event.composedPath();
 
   // begin clicking batch elements
   if (batchState == "batch" && count % 2 == 1) {
+    target.style.border = "thick dashed #FFA500";
     console.log("clicking elements");
     target.style.border = "thick dashed #FFA500";
 
@@ -1250,51 +1360,106 @@ function handleClick(event) {
     // add to clicked array
     clickedElements.push(batchElementWithLabel);
     batchElements.push(batchElementWithLabel);
-    sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements));
-    console.log(clickedElements);
+
+    // sessionStorage.setItem(
+    //   "userFriendlyArray",
+    //   JSON.stringify(clickedElements)
+    // );
+
+    // console.log(clickedElements);
 
     // single editing
   } else if (batchState === "default" && editingMode === true && conditional == 1) {
-    target.style.border = "thick dashed #FFA500";
-    popup = window.open("", "name", "width=200, height=200");
-    popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
-    popup.document.getElementById("button").addEventListener("click", function () {
-      //creates the two input fields
-      userlabel = popup.document.querySelector("#input1").value;
-      userFunction = popup.document.querySelector("#input2").value;
+    //checks to see if a user has previously selected an element on the page by checking if the element has a border around it
+    if (event.target.hasAttribute('style') == true) {
+      if (event.target.getAttribute('style').includes("border: thick dashed rgb(255, 165, 0);")) {
+        //opens the popup
+        editPopup = window.open('', 'name', 'width=200, height=200');
+        editPopup.document.write("<label>Click here to undo a previous label</label><br/><button onClick=\"javascript:window.close('','_parent','')\" id = 'clear' style=\"float: center;\" >Clear</button></br><label>Click here to clear all previous labels</label></br><button onClick=\"javascript:window.close('','_parent','')\" id = 'clearAll' style=\"float: center;\" >Clear All</button><br><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
+        //clears all the previously labelled elements on that webpage
+        editPopup.document.getElementById('clearAll').addEventListener("click", function () {
+          clearHighlight();
+          sessionStorage.clear();
+          editPopup.close();
+        });
+        //clears only the selected element label on that webpage
+        editPopup.document.getElementById('clear').addEventListener("click", function () {
+          storedLabel = sessionStorage.getItem('userFriendlyArray');
+          storedLabel = JSON.parse(storedLabel);
+          // console.log(storedLabel)
+          newArr = [];
+          for (var i = 0; i < storedLabel.length; i++) {
+            interate = storedLabel[i]['targetPath'];
+            if (JSON.stringify(selectorizePath(eventPath)) != interate) {
+              newArr.push(storedLabel[i]);
+            }
+          }
+          console.log(newArr);
+          clickedElements = newArr;
+          sessionStorage.setItem('userFriendlyArray', JSON.stringify(newArr));
+          event.target.style.border = 'none';
+          editPopup.close();
+        });
+        editPopup.document.getElementById("cancel").addEventListener("click", function () {
+          editPopup.close();
+        });
+      }
+    }
+    // target.style.border = "thick dashed #FFA500";
+    if (event.target.getAttribute('style') !== "border: thick dashed rgb(255, 165, 0);") {
+      target.style.border = "thick dashed #FFA500";
+      popup = window.open("", "name", "width=200, height=200");
+      if (popup.document.contains(popup.document.getElementById("clear")) == false && popup.document.contains(popup.document.getElementById("button")) == false) {
+        popup.document.write("<form><label>Input your relabel here</label><input id='input1'><br/><label>Input your functionality here (optional)</label><input id='input2'><br/></form><div style='display: flex; justify-content: space-between; margin-top: 10px'><button id='button' type='submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button id='cancel' onClick=\"javascript:window.close('','_parent','')\">Cancel</button><button id='path'>Show Path</button></div>");
+      }
+      if (popup.document.contains(popup.document.getElementById("button")) == true) {
+        popup.document.getElementById("button").addEventListener("click", function () {
+          //creates the two input fields
+          userlabel = popup.document.querySelector("#input1").value;
+          userFunction = popup.document.querySelector("#input2").value;
 
-      // Create an object to store the element and its label
-      var elementWithLabel = {
-        targetPath: JSON.stringify(selectorizePath(eventPath)),
-        label: userlabel,
-        functionality: userFunction
-      };
+          // Create an object to store the element and its label
+          var elementWithLabel = {
+            targetPath: JSON.stringify(selectorizePath(eventPath)),
+            label: userlabel,
+            functionality: userFunction
+          };
 
-      // add to clicked array
-      clickedElements.push(elementWithLabel);
-      sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements));
+          // add to clicked array
+          clickedElements.push(elementWithLabel);
+          sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements));
 
-      //highlight the clicked element
-      //target.style.border = "thick dashed #FFA500";
+          //highlight the clicked element
+          // target.style.border = "thick dashed #FFA500";
+          console.log(clickedElements);
+          // Log the clicked elements and closes the tab
+          // console.log(clickedElements);
+          popup.close();
+        });
+        // }
+        //closes the tab if cancel is clicked
+        popup.document.getElementById("cancel").addEventListener("click", function () {
+          popup.close();
+          target.style.border = 'none';
+        });
+        //event handler for 'show path' button
+        popup.document.getElementById("path").addEventListener("click", function () {
+          pathPopup(eventPath);
+        });
 
-      // Log the clicked elements and closes the tab
-      // console.log(clickedElements);
-      popup.close();
-    });
-
-    //closes the tab if cancel is clicked
-    popup.document.getElementById("cancel").addEventListener("click", function () {
-      popup.close();
-    });
+        // popup.addEventListener("beforeunload", function(event) {
+        //   target.style.border = "";
+        // });
+      }
+    }
   }
-
   // when to actually assign all elements the same label
   //if (lastBatchState == 'batch' && batchState == 'default') {
-  if (count > 0 && count % 2 == 0) {
+  if (count > 0 && count % 2 == 0 && batchState == 'batch') {
     //  build popup window
     popup = window.open("", "name", "width=200, height=200");
     if (popup.document.contains(popup.document.getElementById("button")) == false) {
-      popup.document.write("<form><label>Input your relabel here</label><input id = 'input1'><br/><label>Input your functionality here (optional)</label><input id = 'input2'><br/></form><button id = 'button' type = 'submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
+      popup.document.write("<form><label>Input your relabel here</label><input id='input1'><br/><label>Input your functionality here (optional)</label><input id='input2'><br/></form><div style='display: flex; justify-content: space-between; margin-top: 10px'><button id='button' type='submit' onClick=\"javascript:window.close('','_parent','')\">Save</button><button id='cancel' onClick=\"javascript:window.close('','_parent','')\">Cancel</button><button id='path'>Show Path</button></div>");
     }
     popup.document.getElementById("button").addEventListener("click", function () {
       //creates the two input fields
@@ -1306,12 +1471,19 @@ function handleClick(event) {
     //closes the tab if cancel is clicked
     popup.document.getElementById("cancel").addEventListener("click", function () {
       popup.close();
+      // clearHighlight()
+    });
+
+    popup.document.getElementById("path").addEventListener("click", function () {
+      pathPopup(eventPath);
     });
   }
 }
 
 // Add the click event listener to the document
 document.addEventListener('click', handleClick);
+// document.addEventListener('click', undo)
+
 function openPopup() {
   //  // build popup window
   popup = window.open("", "name", "width=200, height=200");
@@ -1329,8 +1501,10 @@ function openPopup() {
     }
     // target.style.border = "thick dashed #FFA500";
     clickedElements.push(batchElements);
+    clickedElements.pop();
     console.log(clickedElements);
-
+    // clickedElements.pop()
+    sessionStorage.setItem("userFriendlyArray", JSON.stringify(clickedElements));
     // Log the clicked elements and closes the tab
     // console.log(clickedElements);
     popup.close();
