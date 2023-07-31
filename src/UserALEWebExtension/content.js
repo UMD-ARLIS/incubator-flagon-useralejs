@@ -101,9 +101,7 @@ function getFriendlyTarget(targetPath){
 
     //finds the target value for each labeled element and tries to find a match
     for ( let i =0; i < storedArray.length; i++){
-    console.log(storedArray[i])
     if (storedArray[i] != null){
-      console.log(storedArray[i])
     const foundElement = storedArray.filter(obj => obj.targetPath === path);
       
     //if it has been labeled, search for the label value in the object and re-log it
@@ -173,7 +171,6 @@ document.addEventListener("keydown", function (event) {
 
 document.addEventListener("keydown", function (event) {
   if (event.key == "Shift") {
-    //&& batchEditingMode == true
     isShiftPressed = true;
   }
 });
@@ -181,7 +178,6 @@ var batchEditingMode = false;
 var editingMode = false;
 var batchState = "default";
 var conditional = 0;
-//var tempBatchElements = [];
 var count = 0;
 
 function setBatchState(mode) {
@@ -200,10 +196,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       addHighlight()
     } else {
       conditional = 0;
-      // console.log(popup)
-      // if (popup != null){
       clearHighlight()
-    // }
   }
   }
 });
@@ -255,27 +248,21 @@ function pathPopup(path){
 };
 
 function clearHighlight(){
-  console.log(conditional)
   const highlight = sessionStorage.getItem('userFriendlyArray')
   const noHighlight = JSON.parse(highlight);
   if (noHighlight!= null){
   for (let i=0; i < noHighlight.length; i++){
   checkHighlight = noHighlight[i]['targetPath']
-  // checkLabel = addHighlight[i]['label']
   let parsedHighlight = JSON.parse(checkHighlight)
   finalVar = parsedHighlight[0]
   if (finalVar.indexOf('.') !== -1){
     splitVar = finalVar.split('.')[0]
-    console.log(splitVar)
     j= document.querySelectorAll(splitVar)
     for (let k=0; k < j.length; k++){
       if (j[k].hasAttribute('style') == true){
         check = j[k].getAttribute('style')
-        console.log(checkLabel)
           if (check.includes("thick dashed rgb(255, 165, 0)")){
             j[k].style.border ='thick dashed #ffffff00'
-            // j[k].style.visibility = 'transparent' 
-            console.log(j[k].getAttribute('style'))
       }
     }
     }
@@ -284,10 +271,8 @@ function clearHighlight(){
     for (let k=0; k < j.length; k++){
       if (j[k].hasAttribute('style') == true){
         check = j[k].getAttribute('style')
-        // console.log(checkLabel)
           if (check.includes("thick dashed rgb(255, 165, 0)")){
             j[k].style.border ='thick dashed #ffffff00'
-            console.log(j[k].getAttribute('style'))
     }
 
 }
@@ -303,11 +288,8 @@ function addHighlight(){
     for (let i=0; i < addHighlight.length; i++){
       checkHighlight = addHighlight[i]['targetPath']
       checkLabel = addHighlight[i]['label']
-      console.log(checkLabel)
       let parsedHighlight = JSON.parse(checkHighlight)
-      console.log(parsedHighlight)
       finalVar = parsedHighlight[0]
-      console.log(finalVar)
     if (finalVar.indexOf('.') !== -1){      
       divHighlight = finalVar.split('.')[0]
       j = document.querySelectorAll(divHighlight)
@@ -321,7 +303,6 @@ function addHighlight(){
     }
   }else{
     checkLabel = addHighlight[i]['label']
-    console.log(parsedHighlight)
     j = document.querySelectorAll(finalVar)
         for (let k=0; k < j.length; k++){
           if (j[k].hasAttribute('style') == true){   
@@ -337,7 +318,6 @@ function addHighlight(){
 }
 //handles user label clicks
 function handleClick(event) {
-  // newArr =[]
   lastBatchState = getBatchState();
   //sets the target variable and eventPath variable
   var target = event.target;
@@ -348,7 +328,6 @@ function handleClick(event) {
   // begin clicking batch elements
   if (batchState == "batch" && count % 2 == 1) {
     target.style.border = "thick dashed #FFA500";
-    console.log("clicking elements");
     
     target.style.border = "thick dashed #FFA500";
 
@@ -362,13 +341,6 @@ function handleClick(event) {
     // add to clicked array
     clickedElements.push(batchElementWithLabel);
     batchElements.push(batchElementWithLabel);
-
-    // sessionStorage.setItem(
-    //   "userFriendlyArray",
-    //   JSON.stringify(clickedElements)
-    // );
-
-    // console.log(clickedElements);
 
 
     // single editing
@@ -393,7 +365,6 @@ function handleClick(event) {
       editPopup.document.getElementById('clear').addEventListener("click", function(){
         storedLabel = sessionStorage.getItem('userFriendlyArray')
         storedLabel = JSON.parse(storedLabel)
-        // console.log(storedLabel)
         newArr = []
         for (let i=0; i < storedLabel.length; i++){
           interate = storedLabel[i]['targetPath']
@@ -401,7 +372,6 @@ function handleClick(event) {
             newArr.push(storedLabel[i])
           }
         }
-            console.log(newArr)
             clickedElements = newArr
             sessionStorage.setItem('userFriendlyArray', JSON.stringify(newArr))
             event.target.style.border = 'none'
@@ -415,7 +385,6 @@ function handleClick(event) {
       });
     }
   }
-  // target.style.border = "thick dashed #FFA500";
     if (event.target.getAttribute('style') !== "border: thick dashed rgb(255, 165, 0);"){
       target.style.border = "thick dashed #FFA500";
     popup = window.open("", "name", "width=200, height=200");
@@ -450,14 +419,9 @@ function handleClick(event) {
           JSON.stringify(clickedElements)
         );
 
-        //highlight the clicked element
-        // target.style.border = "thick dashed #FFA500";
-        console.log(clickedElements)
         // Log the clicked elements and closes the tab
-        // console.log(clickedElements);
         popup.close();
       });
-    // }
     //closes the tab if cancel is clicked
     popup.document
       .getElementById("cancel")
@@ -471,16 +435,11 @@ function handleClick(event) {
     .addEventListener("click", function () {
       pathPopup(eventPath);
     });
-
-  // popup.addEventListener("beforeunload", function(event) {
-  //   target.style.border = "";
-  // });
     }
   }
 
   }
   // when to actually assign all elements the same label
-  //if (lastBatchState == 'batch' && batchState == 'default') {
   if (count > 0 && count % 2 == 0 && batchState == 'batch') {
 
     //  build popup window
@@ -507,7 +466,6 @@ function handleClick(event) {
       .getElementById("cancel")
       .addEventListener("click", function () {
         popup.close();
-        // clearHighlight()
       });
       popup.document
       .getElementById("path")
@@ -521,7 +479,6 @@ function handleClick(event) {
 
 // Add the click event listener to the document
 document.addEventListener('click', handleClick);
-// document.addEventListener('click', undo)
 
 function openPopup() {
   //  // build popup window
@@ -545,17 +502,16 @@ function openPopup() {
       for (var i = 0; i < batchElements.length; i++) {
         batchElements[i].label = userlabel;
       }
-      // target.style.border = "thick dashed #FFA500";
       clickedElements.push(batchElements);
+
       clickedElements.pop()
-      console.log(clickedElements);
-      // clickedElements.pop()
+
       sessionStorage.setItem(
           "userFriendlyArray",
           JSON.stringify(clickedElements)
         );
       // Log the clicked elements and closes the tab
-      // console.log(clickedElements);
+
       popup.close();
     });
 
