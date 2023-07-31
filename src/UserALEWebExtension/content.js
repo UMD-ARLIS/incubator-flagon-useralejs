@@ -60,28 +60,30 @@ function queueLog(log) {
 }
 
 function getFriendlyPath(path) {
-  let rawPath = path.slice(); // Copy the array to avoid mutating the original
-  let stored = sessionStorage.getItem('userFriendlyArray');
+  if (typeof path !== 'undefined') {
+    let rawPath = path.slice(); // Copy the array to avoid mutating the original
+    let stored = sessionStorage.getItem('userFriendlyArray');
 
-  if (stored !== null) {
-    let storedArray = JSON.parse(stored);
+    if (stored !== null) {
+      let storedArray = JSON.parse(stored);
 
-    storedArray.forEach(item => {
-      let curPath = JSON.parse(item.targetPath);
+      storedArray.forEach(item => {
+        let curPath = JSON.parse(item.targetPath);
 
-      // Find the start index of curPath in rawPath
-      let startIndex = rawPath.findIndex((element, index) => 
-        rawPath.slice(index, index + curPath.length).every((val, subIndex) => val === curPath[subIndex])
-      );
+        // Find the start index of curPath in rawPath
+        let startIndex = rawPath.findIndex((element, index) => 
+          rawPath.slice(index, index + curPath.length).every((val, subIndex) => val === curPath[subIndex])
+        );
 
-      // If curPath is found in rawPath, replace the starting element with the label
-      if (startIndex !== -1) {
-        rawPath[startIndex] = item.label;
-      }
-    });
-  }
+        // If curPath is found in rawPath, replace the starting element with the label
+        if (startIndex !== -1) {
+          rawPath[startIndex] = item.label;
+        }
+      });
+    }
 
-  return rawPath;
+    return rawPath;
+  };
 }
 
 function getFriendlyTarget(targetPath){
