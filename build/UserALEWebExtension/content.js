@@ -1258,6 +1258,7 @@ function clearHighlight() {
     for (var i = 0; i < noHighlight.length; i++) {
       checkHighlight = noHighlight[i]['targetPath'];
       var parsedHighlight = JSON.parse(checkHighlight);
+      console.log(parsedHighlight);
       finalVar = parsedHighlight[0];
       if (finalVar.indexOf('.') !== -1) {
         splitVar = finalVar.split('.')[0];
@@ -1352,6 +1353,8 @@ function handleClick(event) {
         editPopup.document.write("<label>Click here to undo a previous label</label><br/><button onClick=\"javascript:window.close('','_parent','')\" id = 'clear' style=\"float: center;\" >Clear</button></br><label>Click here to clear all previous labels</label></br><button onClick=\"javascript:window.close('','_parent','')\" id = 'clearAll' style=\"float: center;\" >Clear All</button><br><button onClick=\"javascript:window.close('','_parent','')\" id = 'cancel' style=\"float: right;\">Cancel</button>");
         //clears all the previously labelled elements on that webpage
         editPopup.document.getElementById('clearAll').addEventListener("click", function () {
+          clickedElements = [];
+          console.log(clickedElements);
           clearHighlight();
           sessionStorage.clear();
           editPopup.close();
