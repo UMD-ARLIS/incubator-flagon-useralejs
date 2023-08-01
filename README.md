@@ -32,11 +32,11 @@ Additional documentation and a demonstration can be found at the [Apache Flagon 
 [Contributing](https://github.com/apache/flagon-useralejs#contributing)  
 [License](https://github.com/apache/flagon-useralejs#license)
 
-## What's New in Rapid Relabeling Release (Version 2.3.2)?...
-- Rapid relabeling of DOM elements through click and popup window, additional (optional) functionality label field added
-- Console logging of user-friendly labels
-- Browser side storage of DOM elements and label key value pairs, facilitating cross-site identification of user behavior
-- Batch annotation for multiple DOM elements with shift and click shortcut
+## What's New Version 2.3.2?
+- DOM element full path option in popup window (see examples section for demo)
+- undo previous label and/or all highlights (see examples section for demo)
+- Context menus for single and batch editing modes
+- bug fixes with session storage implementation 
 
 
 See our [CHANGELOG](https://github.com/apache/flagon-useralejs/blob/master/CHANGELOG.md) for a complete list of changes.
@@ -209,16 +209,22 @@ can be used with sample webpages and logging servers. These are tailored for [mo
 and [script-tag examples](https://github.com/apache/flagon-useralejs/tree/master/example).
 Select examples are below:
 
-Example of user-directed rapid relabeling of DOM elements:
+Example of user-directed rapid relabeling of DOM elements and session storage:
 
-https://github.com/UMD-ARLIS/incubator-flagon-useralejs/assets/66893046/78630a11-c5c3-4531-be64-57e6a03366f3
+https://github.com/UMD-ARLIS/incubator-flagon-useralejs/assets/66893046/49c8e243-ec9b-42a0-ac2d-6f8280fb8663
+
+
 
 Usage notes:
-
 - subsequent clicks will enter/exit context menus.
 - Single edits will log the single element and its label save to session storage.
-- Batch edits will assign all clicked elements their respective lables and save to session storage.
+- Batch edits will assign all clicked elements their respective labels and save to session storage.
+- absolute path for DOM element can be seen after clicking on Show Path button in popup.
+![Screenshot 2023-07-31 at 1 14 52 PM](https://github.com/UMD-ARLIS/incubator-flagon-useralejs/assets/66893046/94243757-2918-4cb6-84c3-57f536046dc1)
 
+- labels and highlights can be cleared by themselves or all together with respective buttons whilst in editing mode: 
+
+https://github.com/UMD-ARLIS/incubator-flagon-useralejs/assets/66893046/a77bc1fc-84a9-4cfb-a63b-917e78d6c303
 
 
 Filter your logs with `userale.filter`:
