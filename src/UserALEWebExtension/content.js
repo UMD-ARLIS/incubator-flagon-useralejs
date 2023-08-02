@@ -19,7 +19,7 @@
 
 import * as globals from './globals';
 import * as MessageTypes from './messageTypes.js';
-import { addCallbacks, options, start } from '../main.js';
+import { addCallbacks, options, packageCustomLog, packageLog, start } from '../main.js';
 
 // browser is defined in firefox, but not in chrome. In chrome, they use
 // the 'chrome' global instead. Let's map it to browser so we don't have
@@ -55,7 +55,7 @@ function queueLog(log) {
 function injectScript(config) {
   options(config);
 //  start();  not necessary given that autostart in place, and option is masked from WebExt users
-  addCallbacks({function (log) {
+  addCallbacks({reroute (log) {
     queueLog(Object.assign({}, log, {
       pageUrl: document.location.href,
     }));
@@ -78,3 +78,61 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
+
+// https://stackoverflow.com/a/46781845/21168950
+function getElementXPath (element) {
+  if (!element) return null;
+
+  if (element.tagName === 'HTML') {
+    return '/html';
+  } else {
+    const sameTagSiblings = Array.from(element.parentNode.childNodes)
+      .filter(e => e.nodeName === element.nodeName);
+    const idx = sameTagSiblings.indexOf(element);
+
+    return getElementXPath(element.parentNode) +
+      '/' +
+      element.tagName.toLowerCase() +
+      (sameTagSiblings.length > 1 ? `[${idx + 1}]` : '');
+  }
+}
+
+const observer = new MutationObserver( (mutationList, observer) => {
+  packageCustomLog(
+    {type: "mutation"},
+    () => {
+      return mutationList.map(mutation => {
+        switch(mutation.type) {
+          case "attributes":
+            return {
+              type: mutation.type,
+              target: getElementXPath(mutation.target),
+              attributeName: mutation.attributeName,
+              attributeNamespace: mutation.attributeNamespace,
+              newValue: mutation.target.getAttributeNS(mutation.attributeNamespace, mutation.attributeName)
+            };
+          case "characterData":
+            // TODO
+          case "childList":
+            // TODO
+            return {
+              type: mutation.type,
+              target: getElementXPath(mutation.target),
+            }
+        };
+      });
+    }, false);
+});
+
+observer.observe(document, {childList: true, subtree: true, attributes: true});
+
+addCallbacks({
+  filter(log) {
+      var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
+      var logType_array = ['interval'];
+      if(type_array.includes(log.type) || logType_array.includes(log.logType)) {
+          return false;
+      }
+      return log;
+  }
+});

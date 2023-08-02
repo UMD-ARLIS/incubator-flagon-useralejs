@@ -1032,7 +1032,7 @@ function injectScript(config) {
   options(config);
   //  start();  not necessary given that autostart in place, and option is masked from WebExt users
   addCallbacks({
-    "function": function _function(log) {
+    reroute: function reroute(log) {
       queueLog(Object.assign({}, log, {
         pageUrl: document.location.href
       }));
@@ -1055,3 +1055,57 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
+
+// https://stackoverflow.com/a/46781845/21168950
+function getElementXPath(element) {
+  if (!element) return null;
+  if (element.tagName === 'HTML') {
+    return '/html';
+  } else {
+    var sameTagSiblings = Array.from(element.parentNode.childNodes).filter(function (e) {
+      return e.nodeName === element.nodeName;
+    });
+    var idx = sameTagSiblings.indexOf(element);
+    return getElementXPath(element.parentNode) + '/' + element.tagName.toLowerCase() + (sameTagSiblings.length > 1 ? "[".concat(idx + 1, "]") : '');
+  }
+}
+var observer = new MutationObserver(function (mutationList, observer) {
+  packageCustomLog({
+    type: "mutation"
+  }, function () {
+    return mutationList.map(function (mutation) {
+      switch (mutation.type) {
+        case "attributes":
+          return {
+            type: mutation.type,
+            target: getElementXPath(mutation.target),
+            attributeName: mutation.attributeName,
+            attributeNamespace: mutation.attributeNamespace,
+            newValue: mutation.target.getAttributeNS(mutation.attributeNamespace, mutation.attributeName)
+          };
+        case "characterData":
+        case "childList":
+          // TODO
+          return {
+            type: mutation.type,
+            target: getElementXPath(mutation.target)
+          };
+      }
+    });
+  }, false);
+});
+observer.observe(document, {
+  childList: true,
+  subtree: true,
+  attributes: true
+});
+addCallbacks({
+  filter: function filter(log) {
+    var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
+    var logType_array = ['interval'];
+    if (type_array.includes(log.type) || logType_array.includes(log.logType)) {
+      return false;
+    }
+    return log;
+  }
+});
