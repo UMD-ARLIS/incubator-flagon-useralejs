@@ -212,9 +212,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (count % 2 == 0 && clickedElements.length > 0) {
       openPopup();
       setBatchState('default');
-      if (conditional == 0){
-      clearHighlight()
-      }
     }
   }
 });
@@ -254,7 +251,6 @@ function clearHighlight(){
   for (let i=0; i < noHighlight.length; i++){
   checkHighlight = noHighlight[i]['targetPath']
   let parsedHighlight = JSON.parse(checkHighlight)
-  console.log(parsedHighlight)
   finalVar = parsedHighlight[0]
   if (finalVar.indexOf('.') !== -1){
     splitVar = finalVar.split('.')[0]
@@ -359,7 +355,6 @@ function handleClick(event) {
         //clears all the previously labelled elements on that webpage
         editPopup.document.getElementById('clearAll').addEventListener("click", function(){
           clickedElements = []
-          console.log(clickedElements)
           clearHighlight()
           sessionStorage.clear()
           editPopup.close()
@@ -514,7 +509,9 @@ function openPopup() {
           JSON.stringify(clickedElements)
         );
       // Log the clicked elements and closes the tab
-
+      if (conditional == 0){
+        clearHighlight()
+      }
       popup.close();
     });
 
@@ -522,6 +519,9 @@ function openPopup() {
   popup.document
     .getElementById("cancel")
     .addEventListener("click", function () {
+      if (conditional == 0){
+        clearHighlight()
+      }
       popup.close();
     });
 }
