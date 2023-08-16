@@ -110,40 +110,52 @@ export function initPackager(newLogs, newConfig) {
  * @param  {Function} detailFcn The function to extract additional log parameters from the event.
  * @return {boolean}           Whether the event was logged.
  */
-export function packageLog(e, detailFcn) {
+export function packageLog(activity, detailFcn, userAction) {
   if (!config.on) {
     return false;
   }
 
   let details = null;
   if (detailFcn) {
-    details = detailFcn(e);
+    details = detailFcn(activity);
+  }
+
+  let activityInfo = {};
+  if (activity instanceof window.Event) {
+    activityInfo = {
+      'target' : getSelector(activity.target),
+      'path' : buildPath(activity),
+      'location' : getLocation(activity),
+      'eventType' : activity.type,
+      'activityType': 'event',
+    }
+  } else {
+    Object.assign(activityInfo, activity, {'activityType': 'nonevent'})
   }
 
   const timeFields = extractTimeFields(
-    (e.timeStamp && e.timeStamp > 0) ? config.time(e.timeStamp) : Date.now()
+    (activity instanceof window.Event && activity.timeStamp && activity.timeStamp > 0) ?
+      config.time(activity.timeStamp) : Date.now()
   );
 
   let log = {
-    'target' : getSelector(e.target),
-    'path' : buildPath(e),
+    'activity': activityInfo,
     'pageUrl': window.location.href,
     'pageTitle': document.title,
     'pageReferrer': document.referrer,
     'browser': detectBrowser(),
     'clientTime' : timeFields.milli,
     'microTime' : timeFields.micro,
-    'location' : getLocation(e),
     'scrnRes' : getSreenRes(),
-    'type' : e.type,
-    'logType': 'raw',
-    'userAction' : true,
+    'userAction' : (activity instanceof window.Event) || userAction,
     'details' : details,
-    'userId' : config.userId,
-    'toolVersion' : config.version,
-    'toolName' : config.toolName,
-    'useraleVersion': config.useraleVersion,
-    'sessionID': config.sessionID,
+    'config' : {
+      'userId' : config.userId,
+      'toolVersion' : config.version,
+      'toolName' : config.toolName,
+      'useraleVersion': config.useraleVersion,
+      'sessionID': config.sessionID,
+    }
   };
 
   if ((typeof filterHandler === 'function') && !filterHandler(log)) {
@@ -151,12 +163,12 @@ export function packageLog(e, detailFcn) {
   }
 
   if (typeof mapHandler === 'function') {
-    log = mapHandler(log, e);
+    log = mapHandler(log, activity);
   }
 
   for (const func of Object.values(cbHandlers)) {
     if (typeof func === 'function') {
-      log = func(log, e);
+      log = func(log, activity);
       if(!log) {
         return false;
       }

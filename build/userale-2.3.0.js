@@ -488,40 +488,52 @@
    * @param  {Function} detailFcn The function to extract additional log parameters from the event.
    * @return {boolean}           Whether the event was logged.
    */
-  function packageLog(e, detailFcn) {
+  function packageLog(activity, detailFcn, userAction) {
     if (!config$1.on) {
       return false;
     }
     var details = null;
     if (detailFcn) {
-      details = detailFcn(e);
+      details = detailFcn(activity);
     }
-    var timeFields = extractTimeFields(e.timeStamp && e.timeStamp > 0 ? config$1.time(e.timeStamp) : Date.now());
+    var activityInfo = {};
+    if (activity instanceof window.Event) {
+      activityInfo = {
+        'target': getSelector(activity.target),
+        'path': buildPath(activity),
+        'location': getLocation(activity),
+        'eventType': activity.type,
+        'activityType': 'event'
+      };
+    } else {
+      Object.assign(activityInfo, activity, {
+        'activityType': 'nonevent'
+      });
+    }
+    var timeFields = extractTimeFields(activity instanceof window.Event && activity.timeStamp && activity.timeStamp > 0 ? config$1.time(activity.timeStamp) : Date.now());
     var log = {
-      'target': getSelector(e.target),
-      'path': buildPath(e),
+      'activity': activityInfo,
       'pageUrl': window.location.href,
       'pageTitle': document.title,
       'pageReferrer': document.referrer,
       'browser': detectBrowser(),
       'clientTime': timeFields.milli,
       'microTime': timeFields.micro,
-      'location': getLocation(e),
       'scrnRes': getSreenRes(),
-      'type': e.type,
-      'logType': 'raw',
-      'userAction': true,
+      'userAction': activity instanceof window.Event || userAction,
       'details': details,
-      'userId': config$1.userId,
-      'toolVersion': config$1.version,
-      'toolName': config$1.toolName,
-      'useraleVersion': config$1.useraleVersion,
-      'sessionID': config$1.sessionID
+      'config': {
+        'userId': config$1.userId,
+        'toolVersion': config$1.version,
+        'toolName': config$1.toolName,
+        'useraleVersion': config$1.useraleVersion,
+        'sessionID': config$1.sessionID
+      }
     };
     for (var _i = 0, _Object$values = Object.values(cbHandlers); _i < _Object$values.length; _i++) {
       var func = _Object$values[_i];
       if (typeof func === 'function') {
-        log = func(log, e);
+        log = func(log, activity);
         if (!log) {
           return false;
         }
@@ -1091,12 +1103,9 @@
           attachHandlers(config);
           initSender(logs, config);
           exports.started = config.on = true;
-          packageCustomLog({
+          packageLog({
             type: 'load',
-            logType: 'raw',
-            details: {
-              pageLoadTime: endLoadTimestamp - startLoadTimestamp
-            }
+            pageLoadTime: endLoadTimestamp - startLoadTimestamp
           }, function () {}, false);
         } else {
           setup(config);

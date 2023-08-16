@@ -19,7 +19,7 @@ import {version as userAleVersion} from '../package.json';
 import {getInitialSettings} from './getInitialSettings.js';
 import {configure} from './configure.js';
 import {attachHandlers} from './attachHandlers.js';
-import {initPackager, packageCustomLog} from './packageLogs.js';
+import {initPackager, packageLog} from './packageLogs.js';
 import {initSender} from './sendLogs.js';
 
 const config = {};
@@ -67,10 +67,9 @@ function setup(config) {
                 attachHandlers(config);
                 initSender(logs, config);
                 started = config.on = true;
-                packageCustomLog({
+                packageLog({
                     type: 'load',
-                    logType: 'raw',
-                    details: {pageLoadTime: endLoadTimestamp - startLoadTimestamp}
+                    pageLoadTime: endLoadTimestamp - startLoadTimestamp
                     }, () => {},false)
             } else {
                 setup(config);
