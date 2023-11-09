@@ -1,7 +1,7 @@
 'use strict';
 
 const webpack = require('webpack');
-const webpackMerge = require('webpack-merge');
+const { merge } = require('webpack-merge');
 const path = require('path');
 
 const directory = path.resolve(__dirname);
@@ -46,7 +46,7 @@ const common = {
   },
 };
 
-module.exports = webpackMerge(common, {
+module.exports = merge(common, {
   devtool: 'eval-source-map',
   devServer: {
     contentBase: path.resolve(__dirname),
