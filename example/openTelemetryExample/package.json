@@ -5,7 +5,7 @@
   "description": "Example of using web plugins in browser",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server -d --progress --port 8090 --config webpack.config.js --hot --host 0.0.0.0 examples"
+    "start": "webpack server --port 8090"
   },
   "repository": {
     "type": "git",
