@@ -97,7 +97,7 @@ function getInitialSettings() {
   settings.userFromParams = get('data-user-from-params') || null;
   settings.time = timeStampScale(document.createEvent('CustomEvent'));
   settings.sessionID = get('data-session') || sessionId;
-  settings.authHeader = get('data-auth') || null;
+  settings.authHeader = get('data-auth') || getSessionCookie();
   settings.custIndex = get('data-index') || null;
   return settings;
 }
@@ -151,6 +151,14 @@ function timeStampScale(e) {
     };
   }
   return tsScaler;
+}
+function getSessionCookie() {
+  var _document$cookie$spli;
+  console.log(document.cookie);
+  var keycloakSession = (_document$cookie$spli = document.cookie.split("; ").find(function (row) {
+    return row.startsWith("KEYCLOAK_SESSION=");
+  })) === null || _document$cookie$spli === void 0 ? void 0 : _document$cookie$spli.split("=")[1];
+  return keycloakSession;
 }
 
 /*
@@ -1131,3 +1139,14 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
+
+addCallbacks({
+  filter: function filter(log) {
+    var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
+    var logType_array = ['interval'];
+    if (type_array.includes(log.type) || logType_array.includes(log.logType)) {
+      return false;
+    }
+    return log;
+  }
+});

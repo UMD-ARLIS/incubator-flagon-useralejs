@@ -78,3 +78,14 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
+
+addCallbacks({
+  filter(log) {
+      var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
+      var logType_array = ['interval'];
+      if(type_array.includes(log.type) || logType_array.includes(log.logType)) {
+          return false;
+      }
+      return log;
+  }
+});

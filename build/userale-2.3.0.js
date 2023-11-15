@@ -82,7 +82,7 @@
     settings.userFromParams = get('data-user-from-params') || null;
     settings.time = timeStampScale(document.createEvent('CustomEvent'));
     settings.sessionID = get('data-session') || sessionId;
-    settings.authHeader = get('data-auth') || null;
+    settings.authHeader = get('data-auth') || getSessionCookie();
     settings.custIndex = get('data-index') || null;
     return settings;
   }
@@ -136,6 +136,14 @@
       };
     }
     return tsScaler;
+  }
+  function getSessionCookie() {
+    var _document$cookie$spli;
+    console.log(document.cookie);
+    var keycloakSession = (_document$cookie$spli = document.cookie.split("; ").find(function (row) {
+      return row.startsWith("KEYCLOAK_SESSION=");
+    })) === null || _document$cookie$spli === void 0 ? void 0 : _document$cookie$spli.split("=")[1];
+    return keycloakSession;
   }
 
   /*

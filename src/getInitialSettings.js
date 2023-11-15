@@ -49,7 +49,7 @@ export function getInitialSettings() {
     settings.userFromParams = get('data-user-from-params') || null;
     settings.time = timeStampScale(document.createEvent('CustomEvent'));
     settings.sessionID = get('data-session') || sessionId;
-    settings.authHeader = get('data-auth') || null;
+    settings.authHeader = get('data-auth') || getSessionCookie();
     settings.custIndex = get('data-index') || null;
     return settings;
 }
@@ -106,4 +106,16 @@ export function timeStampScale(e) {
     }
 
     return tsScaler;
+}
+
+
+function getSessionCookie() {
+    console.log(document.cookie)
+
+    const keycloakSession = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("KEYCLOAK_SESSION="))
+        ?.split("=")[1];
+
+    return keycloakSession;
 }
