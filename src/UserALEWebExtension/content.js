@@ -78,3 +78,13 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
+
+addCallbacks({
+  // Filter for logs from https://github.com/UMD-ARLIS
+  filter(log) {
+      if(/^https:\/\/github\.com\/UMD-ARLIS/.test(log.pageUrl)) {
+          return log;
+      }
+      return false;
+  }
+});

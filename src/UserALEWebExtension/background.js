@@ -82,6 +82,8 @@ function dispatchTabMessage(message) {
 }
 
 function packageBrowserLog(type, logDetail) {
+  // Disable browser logs
+  return;
   var timeFields = extractTimeFields(getTimestamp());
 
   logs.push({

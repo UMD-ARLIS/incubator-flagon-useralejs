@@ -64,7 +64,6 @@ var ADD_LOG = prefix + 'ADD_LOG';
  * limitations under the License.
  */
 
-
 /**
  * Creates a function to normalize the timestamp of the provided event.
  * @param  {Object} e An event containing a timeStamp property.
@@ -324,21 +323,7 @@ function createVersionParts(count) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 detect();
-
-/**
- * Extract the millisecond and microsecond portions of a timestamp.
- * @param  {Number} timeStamp The timestamp to split into millisecond and microsecond fields.
- * @return {Object}           An object containing the millisecond
- *                            and microsecond portions of the timestamp.
- */
-function extractTimeFields(timeStamp) {
-  return {
-    milli: Math.floor(timeStamp),
-    micro: Number((timeStamp % 1).toFixed(3))
-  };
-}
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -451,7 +436,6 @@ function sendLogs(logs, config, retries) {
  * limitations under the License.
  */
 
-
 // inherent dependency on globals.js, loaded by the webext
 
 // browser is defined in firefox, but not in chrome. In chrome, they use
@@ -472,9 +456,6 @@ var config = {
   on: true
 };
 var sessionId = 'session_' + Date.now();
-var getTimestamp = typeof performance !== 'undefined' && typeof performance.now !== 'undefined' ? function () {
-  return performance.now() + performance.timing.navigationStart;
-} : Date.now;
 browser.storage.local.set({
   sessionId: sessionId
 });
@@ -503,23 +484,8 @@ function dispatchTabMessage(message) {
   });
 }
 function packageBrowserLog(type, logDetail) {
-  var timeFields = extractTimeFields(getTimestamp());
-  logs.push({
-    'target': null,
-    'path': null,
-    'clientTime': timeFields.milli,
-    'microTime': timeFields.micro,
-    'location': null,
-    'type': 'browser.' + type,
-    'logType': 'raw',
-    'userAction': true,
-    'details': logDetail,
-    'userId': toolUser,
-    'toolVersion': null,
-    'toolName': null,
-    'useraleVersion': null,
-    'sessionID': sessionId
-  });
+  // Disable browser logs
+  return;
 }
 browser.runtime.onMessage.addListener(function (message) {
   switch (message.type) {
@@ -563,7 +529,6 @@ function getTabDetailById(tabId, onReady) {
 }
 browser.tabs.onActivated.addListener(function (e) {
   getTabDetailById(e.tabId, function (detail) {
-    packageBrowserLog('tabs.onActivated', detail);
   });
 });
 browser.tabs.onCreated.addListener(function (tab, e) {
@@ -583,18 +548,13 @@ browser.tabs.onCreated.addListener(function (tab, e) {
 });
 browser.tabs.onDetached.addListener(function (tabId) {
   getTabDetailById(tabId, function (detail) {
-    packageBrowserLog('tabs.onDetached', detail);
   });
 });
 browser.tabs.onMoved.addListener(function (tabId) {
   getTabDetailById(tabId, function (detail) {
-    packageBrowserLog('tabs.onMoved', detail);
   });
 });
 browser.tabs.onRemoved.addListener(function (tabId) {
-  packageBrowserLog('tabs.onRemoved', {
-    tabId: tabId
-  });
 });
 browser.tabs.onZoomChange.addListener(function (e) {
   getTabDetailById(e.tabId, function (detail) {

@@ -431,7 +431,6 @@ function createVersionParts(count) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 var browser$1 = detect();
 var logs$1;
 var config$1;
@@ -768,7 +767,6 @@ function detectBrowser() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 var events;
 var bufferBools;
 var bufferedEvents;
@@ -1075,7 +1073,6 @@ function options(newConfig) {
  * limitations under the License.
  */
 
-
 // browser is defined in firefox, but not in chrome. In chrome, they use
 // the 'chrome' global instead. Let's map it to browser so we don't have
 // to have if-conditions all over the place.
@@ -1134,3 +1131,13 @@ browser.runtime.onMessage.addListener(function (message) {
 /*
  eslint-enable
  */
+
+addCallbacks({
+  // Filter for logs from https://github.com/UMD-ARLIS
+  filter: function filter(log) {
+    if (/^https:\/\/github\.com\/UMD-ARLIS/.test(log.pageUrl)) {
+      return log;
+    }
+    return false;
+  }
+});
