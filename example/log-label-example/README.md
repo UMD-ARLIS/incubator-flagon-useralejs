@@ -6,6 +6,9 @@ logging information about a specific feature.
 
 ## Adding Custom Labels to Logs
 
+#### Important Note
+Please be aware that when adding custom logs without disabling raw logging for those specific logs, duplicate log entries will be generated: one for raw logs and another for custom logs.
+
 ### Example 1
 
 Consider the following HTML:
@@ -21,17 +24,19 @@ The following code snippet will add a custom field, `customLabel`, and send a lo
 clicked:
 
 ```js
-window.userale.map((log, e) => {
-    // determine whether we want to add custom labels to the log
-    if (e && e.target.innerHTML !== 'New Feature') {
-        return log; // normal logging
+window.userale.addCallbacks({
+    map(log, e) {
+        // determine whether we want to add custom labels to the log
+        if (e && e.target.innerHTML !== 'New Feature') {
+            return log; // normal logging
+        }
+        // if the event occurred on the New Feature, add custom labeling
+        return {
+            ...log,
+            customLabel: 'New Feature',
+            logType: 'custom',
+        }
     }
-    // if the event occurred on the New Feature, add custom labeling
-    return {
-        ...log,
-        customLabel: 'New Feature',
-        logType: 'custom',
-    };
 });
 ```
 
