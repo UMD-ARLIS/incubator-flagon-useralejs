@@ -121,7 +121,7 @@ const visitObserver = new MutationObserver( (mutationList, observer) => {
     var tags = {};
     tagKeys.forEach((key, i) => tags[key] = tagValues[i]);
 
-    packageCustomLog({
+    userale.packageCustomLog({
       details: {
         class: parsedName[0][1],
         id: parsedName[0][4] ? parsedName[0][4] : parsedName[0][5],
@@ -149,7 +149,7 @@ document.addEventListener('click', function(e){
       return;
     }
 
-    packageCustomLog({
+    userale.packageCustomLog({
       details: {
         zoom: parsedHash[0][1],
         latitude: parsedHash[0][2],
