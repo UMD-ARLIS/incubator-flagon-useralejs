@@ -75,7 +75,7 @@ async function getTargetHash(event) {
   return buf2hex(hash);
 }
 
-addCallbacks({
+userale.addCallbacks({
   filter(log) {
     var type_array = ['mouseup', 'mouseover', 'mousedown', 'keydown', 'dblclick', 'blur', 'focus', 'input', 'wheel'];
     var logType_array = ['interval'];
